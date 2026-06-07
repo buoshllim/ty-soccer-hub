@@ -42,7 +42,7 @@ h1 {
   background-color: #ffffff;
   border: 1px solid #e8e5de;
   border-radius: 12px;
-  padding: 36px 28px 32px;
+  padding: 20px 28px 32px;
   width: 260px;
   box-shadow: 0 2px 8px rgba(24, 23, 21, 0.06);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -61,7 +61,7 @@ h1 {
   text-transform: uppercase;
   padding: 3px 10px;
   border-radius: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 20px;
 }
 
 .tag-app {
