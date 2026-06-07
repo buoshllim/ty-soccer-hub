@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>⚽ Soccer Cards</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    :root{
+      --bg:#080810;--surface:#101018;--border:#1e1e2e;--text:#f0f0f0;--muted:#666;
+    }
+    html,body{height:100%}
+    body{
+      background:var(--bg);color:var(--text);
+      font-family:'Segoe UI',Arial,sans-serif;
+      max-width:480px;margin:0 auto;min-height:100vh;
+      display:flex;flex-direction:column;
+    }
+
+    /* ── NAV ── */
+    .nav{display:flex;background:#0a0a14;border-bottom:1px solid var(--border);
+      position:sticky;top:0;z-index:50}
+    .nav-btn{flex:1;padding:14px 0;background:none;border:none;color:var(--muted);
+      font-size:13px;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+    .nav-btn.active{color:#fff;border-bottom-color:#e8b84b}
+
+    /* ── SCREENS ── */
+    .screen{display:none;flex:1;overflow-y:auto;flex-direction:column}
+    .screen.active{display:flex}
+
+    /* ══════════════ LOGIN ══════════════ */
+    #loginScreen{align-items:center;justify-content:center;padding:48px 28px;gap:22px}
+    .login-logo{font-size:56px}
+    .login-title{font-size:24px;font-weight:900;letter-spacing:-0.5px}
+    .login-sub{font-size:13px;color:var(--muted);text-align:center;line-height:1.6}
+    .login-form{width:100%;display:flex;flex-direction:column;gap:12px}
+    .login-form input{
+      width:100%;padding:14px 16px;
+      background:#141420;border:1.5px solid var(--border);border-radius:10px;
+      color:#fff;font-size:15px;outline:none;transition:border-color .2s}
+    .login-form input:focus{border-color:#7744ee}
+    .login-btn{
+      padding:14px;
+      background:linear-gradient(135deg,#5533bb,#8844ee);
+      border:none;border-radius:10px;color:#fff;font-size:16px;font-weight:bold;
+      cursor:pointer;transition:opacity .2s}
+    .login-btn:active{opacity:.85}
+    .login-hint{font-size:11px;color:var(--muted);text-align:center}
+
+    /* ══════════════ PACK ══════════════ */
+    #packScreen{align-items:center;justify-content:center;padding:32px 20px;gap:22px}
+    .pack-greeting{font-size:15px;color:#aaa}
+    .pack-title{font-size:26px;font-weight:900}
+    .pack-box{
+      width:160px;height:220px;
+      background:linear-gradient(150deg,#180636,#3a1278,#180848);
+      border-radius:14px;border:2px solid #7744cc;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+      box-shadow:0 0 40px rgba(120,70,220,.45),0 8px 32px rgba(0,0,0,.6);
+      cursor:pointer;transition:transform .18s;position:relative;overflow:hidden}
+    .pack-box::before{
+      content:'';position:absolute;inset:0;
+      background:linear-gradient(45deg,transparent 40%,rgba(255,255,255,.07) 50%,transparent 60%);
+      animation:sheen 2.8s infinite}
+    @keyframes sheen{0%{transform:translateX(-200%)}100%{transform:translateX(200%)}}
+    .pack-box:active{transform:scale(.97)}
+    .pack-icon{font-size:54px;z-index:1}
+    .pack-lbl{font-size:14px;color:#bb88ff;font-weight:bold;z-index:1}
+    .pack-sub{font-size:11px;color:#9966dd;z-index:1}
+    .open-btn{
+      padding:15px 44px;
+      background:linear-gradient(135deg,#7733cc,#cc44ff);
+      border:none;border-radius:30px;color:#fff;font-size:18px;font-weight:bold;
+      cursor:pointer;box-shadow:0 4px 20px rgba(180,80,255,.4);transition:all .2s}
+    .open-btn:active:not(:disabled){transform:scale(.97)}
+    .open-btn:disabled{background:#222233;color:#444;cursor:not-allowed;box-shadow:none}
+    .pack-timer{font-size:13px;color:var(--muted);text-align:center}
+    .pack-count{font-size:12px;color:var(--muted)}
+    .logout-btn{
+      background:none;border:1px solid #2a2a3e;border-radius:20px;
+      color:#555;font-size:12px;padding:7px 18px;cursor:pointer;transition:all .2s}
+    .logout-btn:hover{border-color:#cc4444;color:#cc4444}
+
+    /* ══════════════ REVEAL ══════════════ */
+    #revealScreen{padding:18px 12px;align-items:center;gap:14px}
+    .reveal-title{font-size:20px;font-weight:bold}
+    .reveal-sub{font-size:12px;color:var(--muted)}
+    .cards-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+
+    /* 3D FLIP */
+    .card-slot{perspective:1000px}
+    .flipper{
+      width:108px;height:152px;position:relative;
+      transform-style:preserve-3d;
+      transition:transform .55s cubic-bezier(.4,0,.2,1);cursor:pointer}
+    .flipper.flipped{transform:rotateY(180deg)}
+    .c-back,.c-front{
+      position:absolute;inset:0;
+      backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:10px}
+    .c-back{
+      background:linear-gradient(150deg,#160630,#38106a);
+      border:1.5px solid #6633aa;
+      display:flex;align-items:center;justify-content:center;font-size:38px}
+    .c-front{transform:rotateY(180deg)}
+
+    /* ── CARD ── */
+    .card{
+      width:108px;height:152px;border-radius:10px;
+      padding:6px 6px 5px;position:relative;overflow:hidden;
+      display:flex;flex-direction:column}
+    .card.lg{width:164px;height:230px;padding:9px 9px 7px}
+
+    .card.core  {background:linear-gradient(160deg,#1c1c28,#28283a);border:1.5px solid #50506a}
+    .card.fans  {background:linear-gradient(160deg,#0c1832,#182250);border:1.5px solid #4a7aee}
+    .card.silver{background:linear-gradient(160deg,#262636,#3a3a52);border:1.5px solid #a8b4cc}
+    .card.gold  {
+      background:linear-gradient(160deg,#281800,#483000);
+      border:1.5px solid #e8b84b;
+      box-shadow:0 0 10px rgba(232,184,75,.2)}
+    .card.rare  {
+      background:linear-gradient(160deg,#18062c,#2c084c);
+      border:1.5px solid #cc44ff;
+      animation:rGlow 2.2s ease-in-out infinite alternate}
+    @keyframes rGlow{
+      from{box-shadow:0 0 8px rgba(204,68,255,.3)}
+      to  {box-shadow:0 0 22px rgba(204,68,255,.7),0 0 6px rgba(100,180,255,.3)}}
+    .card.rare::after{
+      content:'';position:absolute;inset:0;border-radius:10px;pointer-events:none;
+      background:linear-gradient(135deg,
+        rgba(255,100,200,.03) 0%,rgba(100,200,255,.04) 33%,
+        rgba(255,220,100,.03) 66%,rgba(200,100,255,.04) 100%);
+      animation:holoM 4s linear infinite}
+    @keyframes holoM{0%{opacity:.4}50%{opacity:1}100%{opacity:.4}}
+
+    .tier-badge{
+      font-size:7px;font-weight:bold;text-transform:uppercase;letter-spacing:.5px;
+      padding:2px 5px;border-radius:6px;flex-shrink:0}
+    .card.lg .tier-badge{font-size:9px}
+    .core   .tier-badge{background:#262636;color:#8888aa}
+    .fans   .tier-badge{background:#0a1838;color:#6a9aee}
+    .silver .tier-badge{background:#2e2e44;color:#b8c4d8}
+    .gold   .tier-badge{background:#381e00;color:#e8b84b}
+    .rare   .tier-badge{background:#260840;color:#cc44ff}
+
+    .card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;gap:2px}
+    .card-pos{font-size:9px;font-weight:bold;color:#777;flex-shrink:0}
+    .card.lg .card-pos{font-size:12px}
+    .card-total{font-size:18px;font-weight:900;line-height:1}
+    .card.lg .card-total{font-size:26px}
+    .core   .card-total{color:#8888aa}
+    .fans   .card-total{color:#6a9aee}
+    .silver .card-total{color:#b8c4d8}
+    .gold   .card-total{color:#e8b84b}
+    .rare   .card-total{color:#cc44ff}
+
+    .card-avatar{
+      flex:1;display:flex;align-items:center;justify-content:center;
+      border-radius:6px;margin:2px 0;overflow:hidden}
+    .card-avatar svg{width:68%;height:68%}
+    .core   .card-avatar{background:rgba(255,255,255,.03);color:#606080}
+    .fans   .card-avatar{background:rgba(74,122,238,.08);color:#4a7aee}
+    .silver .card-avatar{background:rgba(168,180,204,.07);color:#a8b4cc}
+    .gold   .card-avatar{background:rgba(232,184,75,.07);color:#e8b84b}
+    .rare   .card-avatar{background:rgba(204,68,255,.07);color:#cc44ff}
+
+    .card-name{
+      font-size:10px;font-weight:bold;color:#eee;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .card.lg .card-name{font-size:14px}
+    .card-meta{
+      font-size:8px;color:#666;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+    .card.lg .card-meta{font-size:11px}
+
+    .card-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:1px}
+    .stat{display:flex;flex-direction:column;align-items:center;padding:1px 0}
+    .s-lbl{font-size:6px;color:#555}
+    .s-val{font-size:9px;font-weight:bold}
+    .card.lg .s-lbl{font-size:8px}
+    .card.lg .s-val{font-size:12px}
+    .core   .s-val{color:#8888aa}
+    .fans   .s-val{color:#6a9aee}
+    .silver .s-val{color:#b8c4d8}
+    .gold   .s-val{color:#e8b84b}
+    .rare   .s-val{color:#cc44ff}
+
+    .custom-ph{
+      flex:1;display:flex;flex-direction:column;align-items:center;
+      justify-content:center;gap:3px}
+    .custom-ph .ph-icon{font-size:24px}
+    .card.lg .custom-ph .ph-icon{font-size:36px}
+    .custom-ph span{font-size:8px;color:#777}
+    .card.lg .custom-ph span{font-size:11px}
+
+    /* reveal buttons */
+    .rev-btns{display:flex;flex-direction:column;align-items:center;gap:10px;padding-bottom:16px}
+    .btn-flip{
+      padding:12px 34px;
+      background:linear-gradient(135deg,#3322aa,#5533cc);
+      border:none;border-radius:24px;color:#fff;font-size:15px;font-weight:bold;
+      cursor:pointer;box-shadow:0 3px 14px rgba(80,50,200,.4);transition:all .15s}
+    .btn-flip:active{transform:scale(.97)}
+    .btn-save{
+      padding:12px 34px;
+      background:linear-gradient(135deg,#1a7a33,#33aa55);
+      border:none;border-radius:24px;color:#fff;font-size:15px;font-weight:bold;
+      cursor:pointer;box-shadow:0 3px 14px rgba(40,150,70,.4);transition:all .15s}
+    .btn-save:active:not(:disabled){transform:scale(.97)}
+    .btn-save:disabled{background:#222233;color:#555;cursor:not-allowed;box-shadow:none}
+
+    /* ══════════════ BINDER ══════════════ */
+    #binderScreen{padding:16px}
+    .binder-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+    .binder-title{font-size:18px;font-weight:bold}
+    .binder-total{font-size:12px;color:var(--muted)}
+    .filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+    .f-btn{
+      padding:4px 10px;border-radius:12px;
+      border:1px solid #2a2a3e;background:transparent;color:#666;
+      font-size:11px;cursor:pointer;transition:all .15s}
+    .f-btn.active{border-color:#e8b84b;color:#e8b84b;background:rgba(232,184,75,.1)}
+    .binder-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .b-item{cursor:pointer;transition:transform .15s}
+    .b-item:active{transform:scale(.97)}
+    .binder-empty{
+      grid-column:1/-1;text-align:center;
+      color:var(--muted);padding:60px 0;font-size:14px;line-height:2.2}
+
+    /* ══════════════ MODALS ══════════════ */
+    .overlay{
+      display:none;position:fixed;inset:0;
+      background:rgba(0,0,0,.78);z-index:100;
+      align-items:center;justify-content:center;padding:20px}
+    .overlay.open{display:flex}
+    .modal{
+      background:#11111c;border:1px solid var(--border);
+      border-radius:18px;padding:20px;width:100%;max-width:320px;
+      display:flex;flex-direction:column;align-items:center;gap:14px;
+      max-height:90vh;overflow-y:auto}
+    .modal-hdr{display:flex;justify-content:space-between;align-items:center;width:100%}
+    .modal-ttl{font-size:16px;font-weight:bold}
+    .modal-x{background:none;border:none;color:#555;font-size:20px;cursor:pointer;padding:0 4px}
+
+    .cform{width:100%;display:flex;flex-direction:column;gap:10px}
+    .cform label{font-size:11px;color:#777;margin-bottom:-6px;display:block}
+    .cform input,.cform select{
+      width:100%;padding:12px 14px;
+      background:#181826;border:1.5px solid var(--border);border-radius:8px;
+      color:#fff;font-size:14px;outline:none;transition:border-color .2s}
+    .cform input:focus,.cform select:focus{border-color:#7744ee}
+    .cform select option{background:#181826}
+    .btn-ok{
+      width:100%;padding:13px;
+      background:linear-gradient(135deg,#5533bb,#8844ee);
+      border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:bold;
+      cursor:pointer;margin-top:4px}
+    .btn-edit{
+      width:100%;padding:12px;
+      background:#1e1e2e;border:1px solid #3a3a5a;border-radius:10px;
+      color:#aaa;font-size:14px;cursor:pointer;display:none}
+
+    /* TOAST */
+    .toast{
+      position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
+      background:#22223a;color:#fff;padding:10px 20px;border-radius:20px;
+      font-size:13px;z-index:200;opacity:0;transition:opacity .3s;
+      white-space:nowrap;pointer-events:none;max-width:90vw;text-align:center}
+    .toast.show{opacity:1}
+
+    /* LOADING */
+    .loading{
+      position:fixed;inset:0;background:rgba(8,8,16,.85);
+      z-index:300;display:flex;align-items:center;justify-content:center;
+      flex-direction:column;gap:14px}
+    .loading.off{display:none}
+    .spinner{
+      width:38px;height:38px;border:3px solid #2a2a3a;
+      border-top-color:#8844ee;border-radius:50%;animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* ══════════════ BATTLE ══════════════ */
+    #battleScreen{padding:16px;flex-direction:column;gap:14px}
+    .bt-sub{display:flex;flex-direction:column;gap:14px}
+    .bt-title{font-size:20px;font-weight:900;text-align:center;padding-top:8px}
+    .bt-sub-lbl{font-size:12px;color:var(--muted);text-align:center}
+
+    /* Mode select */
+    .bt-mode-btns{display:flex;gap:12px}
+    .bt-mode-btn{flex:1;padding:18px 8px;border-radius:14px;border:1.5px solid #2a2a3e;
+      background:#101018;color:#fff;font-size:13px;font-weight:bold;cursor:pointer;
+      display:flex;flex-direction:column;align-items:center;gap:8px;transition:all .2s}
+    .bt-mode-btn:active{border-color:#e8b84b;transform:scale(.97)}
+    .bt-mode-icon{font-size:36px}
+
+    /* Card select */
+    .bt-csel-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-height:55vh;overflow-y:auto}
+    .bt-csel-item{cursor:pointer;border-radius:10px;border:2px solid transparent;transition:all .15s;transform:scale(.95)}
+    .bt-csel-item:hover{border-color:#7744ee;transform:scale(1)}
+    .bt-csel-item.selected{border-color:#e8b84b;transform:scale(1)}
+
+    /* Arena */
+    .bt-arena-hdr{display:flex;justify-content:space-between;align-items:center;padding:4px 0}
+    .bt-round-lbl{font-size:13px;font-weight:bold;color:#aaa}
+    .bt-scores{font-size:14px;color:#fff;font-weight:900;letter-spacing:2px}
+    .bt-vs{display:flex;gap:8px;align-items:flex-start;justify-content:center}
+    .bt-vs-side{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
+    .bt-vs-lbl{font-size:10px;color:#666;font-weight:bold;letter-spacing:1px}
+    .bt-vs-sep{display:flex;align-items:center;padding-top:30px;font-size:20px;color:#333;font-weight:bold}
+    .bt-card-sm{transform:scale(.88);transform-origin:top center;width:108px}
+
+    .bt-stat-row{display:flex;flex-direction:column;gap:6px}
+    .bt-stat-title{font-size:12px;color:#888;text-align:center}
+    .bt-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+    .bt-stat-btn{padding:9px 4px;border-radius:8px;border:1.5px solid #2a2a3e;
+      background:#101018;color:#eee;font-size:12px;font-weight:bold;cursor:pointer;
+      display:flex;flex-direction:column;align-items:center;gap:2px;transition:all .15s}
+    .bt-stat-btn:hover:not(:disabled):not(.used){border-color:#7744ee;background:#14142a}
+    .bt-stat-btn.used{opacity:.25;cursor:not-allowed}
+    .bt-stat-btn:disabled:not(.used){opacity:.5;cursor:not-allowed}
+    .bt-stat-key{font-size:8px;color:#555}
+    .bt-stat-btn:not(.used) .bt-stat-key{color:#888}
+
+    /* Round result */
+    .bt-rr{background:#131320;border:1px solid #2a2a3e;border-radius:14px;
+      padding:16px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+    .bt-rr-win{font-size:22px;font-weight:900;color:#4ade80}
+    .bt-rr-lose{font-size:22px;font-weight:900;color:#f87171}
+    .bt-rr-draw{font-size:22px;font-weight:900;color:#facc15}
+    .bt-rr-detail{font-size:12px;color:#888;line-height:1.8}
+    .bt-next-btn{padding:12px 30px;border-radius:24px;
+      background:linear-gradient(135deg,#5533bb,#8844ee);
+      border:none;color:#fff;font-size:14px;font-weight:bold;cursor:pointer;margin-top:4px}
+
+    /* Final */
+    .bt-final{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;padding:10px 0}
+    .bt-final-icon{font-size:56px}
+    .bt-final-title{font-size:26px;font-weight:900}
+    .bt-final-score{font-size:14px;color:#aaa}
+    .bt-final-rounds{width:100%;background:#101018;border-radius:12px;padding:12px;
+      display:flex;flex-direction:column;gap:0}
+    .bt-fr-row{display:flex;justify-content:space-between;align-items:center;
+      font-size:11px;padding:6px 4px;border-bottom:1px solid #1a1a2a}
+    .bt-fr-row:last-child{border-bottom:none}
+    .bt-fr-left,.bt-fr-right{font-weight:bold;width:80px}
+    .bt-fr-left{text-align:left}.bt-fr-right{text-align:right}
+    .bt-fr-mid{color:#555;font-size:10px}
+    .home-win .bt-fr-left{color:#4ade80}.home-win .bt-fr-right{color:#666}
+    .away-win .bt-fr-right{color:#4ade80}.away-win .bt-fr-left{color:#666}
+    .draw-row .bt-fr-left,.draw-row .bt-fr-right{color:#facc15}
+    .bt-replay-btn{padding:12px 30px;border-radius:24px;
+      background:#1e1e2e;border:1px solid #3a3a5a;
+      color:#aaa;font-size:14px;cursor:pointer;width:100%}
+
+    /* Multiplayer lobby */
+    .bt-room-code{font-size:36px;font-weight:900;letter-spacing:6px;color:#e8b84b;text-align:center}
+    .bt-room-status{font-size:13px;color:#aaa;text-align:center;line-height:1.7}
+    .bt-room-input{width:100%;padding:14px;background:#141420;border:1.5px solid var(--border);
+      border-radius:10px;color:#fff;font-size:22px;font-weight:bold;text-align:center;
+      letter-spacing:6px;outline:none}
+    .bt-room-input:focus{border-color:#7744ee}
+    .bt-multi-btns{display:flex;gap:10px}
+    .bt-multi-create{flex:1;padding:14px;border-radius:10px;border:none;
+      background:linear-gradient(135deg,#5533bb,#8844ee);color:#fff;font-size:14px;font-weight:bold;cursor:pointer}
+    .bt-multi-join{flex:1;padding:14px;border-radius:10px;
+      background:#1e1e2e;border:1px solid #2a2a3e;color:#aaa;font-size:14px;font-weight:bold;cursor:pointer}
+    .bt-back{background:none;border:none;color:#555;font-size:13px;cursor:pointer;align-self:flex-start;padding:0}
+    .bt-waiting-icon{font-size:48px;animation:pulse 1.4s ease-in-out infinite alternate}
+    @keyframes pulse{from{transform:scale(1)}to{transform:scale(1.08)}}
+    .bt-cpu-thinking{font-size:12px;color:#888;text-align:center;animation:pulse 0.8s ease-in-out infinite alternate}
+  </style>
+</head>
+<body>
+
+<div class="loading off" id="ld"><div class="spinner"></div></div>
+
+<nav class="nav" id="nav" style="display:none">
+  <button class="nav-btn active" id="navPack" onclick="go('pack')">⚽ 팩 열기</button>
+  <button class="nav-btn" id="navBattle" onclick="go('battle')">⚔️ 배틀</button>
+  <button class="nav-btn" id="navBinder" onclick="go('binder')">📚 바인더</button>
+</nav>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="screen active" style="display:flex">
+  <div class="login-logo">⚽</div>
+  <div class="login-title">Soccer Cards</div>
+  <div class="login-sub">닉네임과 4자리 PIN으로<br>나만의 바인더를 만들어봐!</div>
+  <div class="login-form">
+    <input type="text" id="lnick" placeholder="닉네임 입력" maxlength="12" autocomplete="off">
+    <input type="password" id="lpin" placeholder="4자리 PIN (숫자)" maxlength="4"
+      pattern="[0-9]{4}" inputmode="numeric" autocomplete="off">
+    <button class="login-btn" onclick="doLogin()">시작하기! 🚀</button>
+  </div>
+  <div class="login-hint">처음이라면 자동으로 계정이 만들어져.</div>
+</div>
+
+<!-- PACK -->
+<div id="packScreen" class="screen">
+  <div class="pack-greeting" id="pgreet"></div>
+  <div class="pack-title">선수 카드 팩</div>
+  <div class="pack-box" onclick="doOpen()">
+    <div class="pack-icon">🎴</div>
+    <div class="pack-lbl">SOCCER PACK</div>
+    <div class="pack-sub">5장 들이</div>
+  </div>
+  <button class="open-btn" id="openBtn" onclick="doOpen()">팩 열기! ⚽</button>
+  <div class="pack-timer" id="ptimer">매일 한 번 팩을 열 수 있어!</div>
+  <div class="pack-count" id="pcount"></div>
+  <button class="logout-btn" onclick="doLogout()">로그아웃</button>
+</div>
+
+<!-- REVEAL -->
+<div id="revealScreen" class="screen">
+  <div class="reveal-title">🎉 카드 획득!</div>
+  <div class="reveal-sub" id="revealSub">카드를 탭해서 공개해봐!</div>
+  <div class="cards-row" id="cRow"></div>
+  <div class="rev-btns">
+    <button class="btn-flip" id="flipAllBtn" onclick="flipAll()">✨ 전부 공개!</button>
+    <button class="btn-save" id="saveBtn" onclick="saveCards()" disabled>📚 바인더에 저장</button>
+  </div>
+</div>
+
+<!-- BATTLE -->
+<div id="battleScreen" class="screen">
+  <!-- Mode select -->
+  <div id="btMode" class="bt-sub">
+    <div class="bt-title">⚔️ 카드 배틀</div>
+    <div class="bt-sub-lbl">내 카드로 배틀해봐!<br>5라운드 + 총합 비교로 승부 결정!</div>
+    <div class="bt-mode-btns">
+      <button class="bt-mode-btn" onclick="btStartSolo()">
+        <span class="bt-mode-icon">🤖</span>
+        <span>CPU와 배틀</span>
+        <span style="font-size:10px;color:#666;font-weight:normal">혼자서 도전!</span>
+      </button>
+      <button class="bt-mode-btn" onclick="btShowMulti()">
+        <span class="bt-mode-icon">🌐</span>
+        <span>친구와 배틀</span>
+        <span style="font-size:10px;color:#666;font-weight:normal">같이 해봐!</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Multiplayer lobby -->
+  <div id="btMulti" class="bt-sub" style="display:none">
+    <div class="bt-title">🌐 친구와 배틀</div>
+    <button class="bt-back" onclick="btShowMode()">← 돌아가기</button>
+    <div id="btMultiLobby">
+      <div class="bt-room-status">방을 만들거나<br>친구한테 받은 코드를 입력해봐!</div>
+      <input class="bt-room-input" id="btRoomInput" placeholder="코드 입력" maxlength="6" style="text-transform:uppercase">
+      <div class="bt-multi-btns">
+        <button class="bt-multi-create" onclick="btCreateRoom()">방 만들기</button>
+        <button class="bt-multi-join" onclick="btJoinRoom()">참가하기</button>
+      </div>
+    </div>
+    <div id="btMultiWaiting" style="display:none">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:20px 0">
+        <div class="bt-waiting-icon">⏳</div>
+        <div class="bt-room-code" id="btRoomCode"></div>
+        <div class="bt-room-status">이 코드를 친구한테 알려줘!<br>친구가 접속하면 배틀 시작!</div>
+        <button class="bt-replay-btn" onclick="btLeaveRoom()">방 나가기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card select -->
+  <div id="btCardSel" class="bt-sub" style="display:none">
+    <div class="bt-title" id="btCardSelTitle">카드를 골라봐!</div>
+    <div class="bt-sub-lbl">배틀에 쓸 카드 1장 선택</div>
+    <div class="bt-csel-grid" id="btCardGrid"></div>
+  </div>
+
+  <!-- Arena -->
+  <div id="btArena" class="bt-sub" style="display:none">
+    <div class="bt-arena-hdr">
+      <span class="bt-round-lbl" id="btRoundLbl">Round 1 / 5</span>
+      <span class="bt-scores" id="btScoreLbl">0 : 0</span>
+    </div>
+    <div class="bt-vs" id="btVs"></div>
+    <div class="bt-stat-row" id="btStatRow">
+      <div class="bt-stat-title" id="btStatTitle">어떤 능력치로 배틀할까?</div>
+      <div class="bt-stats" id="btStatBtns"></div>
+    </div>
+    <div id="btRoundResult" style="display:none"></div>
+  </div>
+
+  <!-- Final result -->
+  <div id="btFinal" class="bt-sub" style="display:none"></div>
+</div>
+
+<!-- BINDER -->
+<div id="binderScreen" class="screen">
+  <div class="binder-top">
+    <div class="binder-title">📚 내 바인더</div>
+    <div class="binder-total" id="btotal">0장</div>
+  </div>
+  <div class="filter-row">
+    <button class="f-btn active" data-f="all"    onclick="setF('all')">전체</button>
+    <button class="f-btn"        data-f="rare"   onclick="setF('rare')">⭐ Rare</button>
+    <button class="f-btn"        data-f="gold"   onclick="setF('gold')">🥇 Gold</button>
+    <button class="f-btn"        data-f="silver" onclick="setF('silver')">🥈 Silver</button>
+    <button class="f-btn"        data-f="fans"   onclick="setF('fans')">💙 Fans</button>
+    <button class="f-btn"        data-f="core"   onclick="setF('core')">⬜ Core</button>
+  </div>
+  <div class="binder-grid" id="bgrid"></div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="overlay" id="detailOv" onclick="closeDifBg(event)">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-ttl" id="dttl">카드 상세</div>
+      <button class="modal-x" onclick="closeD()">✕</button>
+    </div>
+    <div id="dcard"></div>
+    <button class="btn-edit" id="editBtn" onclick="openEdit()">✏️ 선수 정보 수정</button>
+  </div>
+</div>
+
+<!-- CUSTOM CARD MODAL -->
+<div class="overlay" id="customOv">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-ttl">✏️ 자유카드 입력</div>
+    </div>
+    <p style="font-size:12px;color:#777;text-align:center">선수 정보를 직접 입력해봐!</p>
+    <div class="cform">
+      <div>
+        <label>선수 이름</label>
+        <input type="text" id="cfName" placeholder="예: 내 이름" maxlength="16">
+      </div>
+      <div>
+        <label>국적</label>
+        <select id="cfNat">
+          <option>🇰🇷 한국</option><option>🇯🇵 일본</option>
+          <option>🇧🇷 브라질</option><option>🇦🇷 아르헨티나</option>
+          <option>🇫🇷 프랑스</option><option>🇪🇸 스페인</option>
+          <option>🇵🇹 포르투갈</option><option>🇩🇪 독일</option>
+          <option>🏴󠁧󠁢󠁥󠁮󠁧󠁿 잉글랜드</option><option>🇳🇱 네덜란드</option>
+          <option>🇮🇹 이탈리아</option><option>🇧🇪 벨기에</option>
+          <option>🇳🇴 노르웨이</option><option>🇸🇳 세네갈</option>
+          <option>🇪🇬 이집트</option><option>🇲🇦 모로코</option>
+          <option>🇳🇬 나이지리아</option><option>🇨🇴 콜롬비아</option>
+          <option>🇺🇾 우루과이</option><option>🇺🇸 미국</option>
+          <option>🇵🇱 폴란드</option><option>🇭🇷 크로아티아</option>
+          <option>🌍 기타</option>
+        </select>
+      </div>
+      <div>
+        <label>소속 팀</label>
+        <input type="text" id="cfTeam" placeholder="예: 내 팀" maxlength="20">
+      </div>
+      <div>
+        <label>포지션</label>
+        <select id="cfPos">
+          <option value="FW">FW – 공격수</option>
+          <option value="MF">MF – 미드필더</option>
+          <option value="DF">DF – 수비수</option>
+          <option value="GK">GK – 골키퍼</option>
+        </select>
+      </div>
+      <button class="btn-ok" onclick="submitCustom()">완성! 🎉</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// SUPABASE
+// ═══════════════════════════════════════════════════════
+const SB = 'https://fnzcoeihrnttzbfhdagc.supabase.co';
+const AK = 'sb_publishable_HfTJy0m0moC1eXoVJKXlcQ_NX1Ii035';
+const H  = { apikey:AK, Authorization:`Bearer ${AK}`, 'Content-Type':'application/json' };
+
+const db = {
+  async get(t, q='') {
+    const r = await fetch(`${SB}/rest/v1/${t}?${q}`, { headers:H });
+    return r.ok ? r.json() : [];
+  },
+  async post(t, body) {
+    const r = await fetch(`${SB}/rest/v1/${t}`, {
+      method:'POST', headers:{...H, Prefer:'return=representation'},
+      body: JSON.stringify(body)
+    });
+    return r.ok ? r.json() : null;
+  },
+  async patch(t, q, body) {
+    const r = await fetch(`${SB}/rest/v1/${t}?${q}`, {
+      method:'PATCH', headers:{...H, Prefer:'return=representation'},
+      body: JSON.stringify(body)
+    });
+    return r.ok ? r.json() : null;
+  },
+  async upsert(t, body) {
+    const r = await fetch(`${SB}/rest/v1/${t}`, {
+      method:'POST', headers:{...H, Prefer:'resolution=merge-duplicates,return=representation'},
+      body: JSON.stringify(body)
+    });
+    return r.ok ? r.json() : null;
+  },
+};
+
+// ═══════════════════════════════════════════════════════
+// SVG SILHOUETTES
+// ═══════════════════════════════════════════════════════
+const SVG = {
+  FW:`<svg viewBox="0 0 60 80" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="34" cy="9" r="8" fill="currentColor" stroke="none"/>
+    <path d="M34 17 L32 40" stroke-width="5"/>
+    <path d="M32 24 L17 31" stroke-width="4"/>
+    <path d="M32 24 L47 19" stroke-width="4"/>
+    <path d="M30 40 L22 58 L17 70" stroke-width="5"/>
+    <path d="M34 40 L44 53 L55 58" stroke-width="5"/>
+    <circle cx="55" cy="64" r="5" stroke-width="2.5"/>
+  </svg>`,
+  MF:`<svg viewBox="0 0 60 80" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="30" cy="9" r="8" fill="currentColor" stroke="none"/>
+    <path d="M30 17 L31 40" stroke-width="5"/>
+    <path d="M30 24 L15 33" stroke-width="4"/>
+    <path d="M30 24 L47 29" stroke-width="4"/>
+    <path d="M28 40 L20 60 L18 72" stroke-width="5"/>
+    <path d="M33 40 L44 57 L48 70" stroke-width="5"/>
+  </svg>`,
+  DF:`<svg viewBox="0 0 60 80" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="30" cy="9" r="8" fill="currentColor" stroke="none"/>
+    <path d="M30 17 L30 40" stroke-width="5"/>
+    <path d="M30 25 L10 30" stroke-width="4"/>
+    <path d="M30 25 L50 30" stroke-width="4"/>
+    <path d="M26 40 L18 60 L15 72" stroke-width="5"/>
+    <path d="M34 40 L42 60 L45 72" stroke-width="5"/>
+  </svg>`,
+  GK:`<svg viewBox="0 0 60 80" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="30" cy="9" r="8" fill="currentColor" stroke="none"/>
+    <path d="M30 17 L30 40" stroke-width="5"/>
+    <path d="M28 23 L10 11" stroke-width="4"/>
+    <path d="M32 23 L52 11" stroke-width="4"/>
+    <path d="M26 40 L20 58 L18 70" stroke-width="5"/>
+    <path d="M34 40 L40 58 L42 70" stroke-width="5"/>
+  </svg>`,
+};
+
+// ═══════════════════════════════════════════════════════
+// GAME DATA
+// ═══════════════════════════════════════════════════════
+const TIERS = [
+  {id:'core',   lbl:'CORE',   max:300, rate:.45},
+  {id:'fans',   lbl:'FANS',   max:350, rate:.30},
+  {id:'silver', lbl:'SILVER', max:400, rate:.15},
+  {id:'gold',   lbl:'GOLD',   max:450, rate:.08},
+  {id:'rare',   lbl:'RARE',   max:500, rate:.02},
+];
+const TORD = {rare:0,gold:1,silver:2,fans:3,core:4};
+
+const PW = {
+  FW:{atk:.38,pas:.22,def:.12,spd:.18,stm:.10},
+  MF:{atk:.20,pas:.35,def:.18,spd:.14,stm:.13},
+  DF:{atk:.10,pas:.20,def:.38,spd:.16,stm:.16},
+  GK:{atk:.06,pas:.14,def:.42,spd:.18,stm:.20},
+};
+
+const PLAYERS = [
+  // 🇰🇷 한국
+  {n:'손흥민',nat:'🇰🇷 한국',team:'토트넘',pos:'FW'},
+  {n:'이강인',nat:'🇰🇷 한국',team:'PSG',pos:'MF'},
+  {n:'김민재',nat:'🇰🇷 한국',team:'바이에른',pos:'DF'},
+  {n:'황희찬',nat:'🇰🇷 한국',team:'울버햄튼',pos:'FW'},
+  {n:'이재성',nat:'🇰🇷 한국',team:'마인츠',pos:'MF'},
+  // 🇯🇵 일본
+  {n:'미토마 카오루',nat:'🇯🇵 일본',team:'브라이튼',pos:'FW'},
+  {n:'도안 리쓰',nat:'🇯🇵 일본',team:'프라이부르크',pos:'FW'},
+  {n:'구보 다케후사',nat:'🇯🇵 일본',team:'레알 소시에다드',pos:'MF'},
+  {n:'엔도 와타루',nat:'🇯🇵 일본',team:'리버풀',pos:'MF'},
+  // 🇧🇷 브라질
+  {n:'비니시우스 주니어',nat:'🇧🇷 브라질',team:'레알 마드리드',pos:'FW'},
+  {n:'호드리구',nat:'🇧🇷 브라질',team:'레알 마드리드',pos:'FW'},
+  {n:'엔드리크',nat:'🇧🇷 브라질',team:'레알 마드리드',pos:'FW'},
+  {n:'카세미루',nat:'🇧🇷 브라질',team:'맨체스터 유나이티드',pos:'MF'},
+  {n:'마르키뉴스',nat:'🇧🇷 브라질',team:'PSG',pos:'DF'},
+  {n:'알리송',nat:'🇧🇷 브라질',team:'리버풀',pos:'GK'},
+  // 🇦🇷 아르헨티나
+  {n:'리오넬 메시',nat:'🇦🇷 아르헨티나',team:'인테르 마이애미',pos:'FW'},
+  {n:'라우타로 마르티네스',nat:'🇦🇷 아르헨티나',team:'인테르 밀란',pos:'FW'},
+  {n:'에밀리아노 마르티네스',nat:'🇦🇷 아르헨티나',team:'아스톤 빌라',pos:'GK'},
+  {n:'리산드로 마르티네스',nat:'🇦🇷 아르헨티나',team:'맨체스터 유나이티드',pos:'DF'},
+  {n:'로드리고 데파울',nat:'🇦🇷 아르헨티나',team:'아틀레티코 마드리드',pos:'MF'},
+  // 🇫🇷 프랑스
+  {n:'킬리안 음바페',nat:'🇫🇷 프랑스',team:'레알 마드리드',pos:'FW'},
+  {n:'앙투안 그리즈만',nat:'🇫🇷 프랑스',team:'아틀레티코 마드리드',pos:'FW'},
+  {n:'오렐리앙 추아메니',nat:'🇫🇷 프랑스',team:'레알 마드리드',pos:'MF'},
+  {n:'마이크 마이냥',nat:'🇫🇷 프랑스',team:'아스날',pos:'GK'},
+  // 🇪🇸 스페인
+  {n:'페드리',nat:'🇪🇸 스페인',team:'바르셀로나',pos:'MF'},
+  {n:'라민 야말',nat:'🇪🇸 스페인',team:'바르셀로나',pos:'FW'},
+  {n:'로드리',nat:'🇪🇸 스페인',team:'맨체스터 시티',pos:'MF'},
+  {n:'알바로 모라타',nat:'🇪🇸 스페인',team:'AC 밀란',pos:'FW'},
+  {n:'우나이 시몬',nat:'🇪🇸 스페인',team:'아틀레틱 빌바오',pos:'GK'},
+  // 🇵🇹 포르투갈
+  {n:'크리스티아누 호날두',nat:'🇵🇹 포르투갈',team:'알나스르',pos:'FW'},
+  {n:'브루노 페르난데스',nat:'🇵🇹 포르투갈',team:'맨체스터 유나이티드',pos:'MF'},
+  {n:'루벤 디아스',nat:'🇵🇹 포르투갈',team:'맨체스터 시티',pos:'DF'},
+  {n:'디오구 코스타',nat:'🇵🇹 포르투갈',team:'포르투',pos:'GK'},
+  // 🇩🇪 독일
+  {n:'플로리안 비르츠',nat:'🇩🇪 독일',team:'바이에른 뮌헨',pos:'MF'},
+  {n:'야말 무시알라',nat:'🇩🇪 독일',team:'바이에른 뮌헨',pos:'MF'},
+  {n:'카이 하버츠',nat:'🇩🇪 독일',team:'아스날',pos:'MF'},
+  {n:'해리 케인',nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿 잉글랜드',team:'바이에른 뮌헨',pos:'FW'},
+  {n:'마누엘 노이어',nat:'🇩🇪 독일',team:'바이에른 뮌헨',pos:'GK'},
+  // 🏴󠁧󠁢󠁥󠁮󠁧󠁿 잉글랜드
+  {n:'부카요 사카',nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿 잉글랜드',team:'아스날',pos:'FW'},
+  {n:'필 포든',nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿 잉글랜드',team:'맨체스터 시티',pos:'MF'},
+  {n:'주드 벨링엄',nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿 잉글랜드',team:'레알 마드리드',pos:'MF'},
+  {n:'데클란 라이스',nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿 잉글랜드',team:'아스날',pos:'MF'},
+  {n:'조던 픽퍼드',nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿 잉글랜드',team:'에버튼',pos:'GK'},
+  // 🇳🇴 노르웨이
+  {n:'얼링 홀란드',nat:'🇳🇴 노르웨이',team:'맨체스터 시티',pos:'FW'},
+  // 🇳🇱 네덜란드
+  {n:'버질 반다이크',nat:'🇳🇱 네덜란드',team:'리버풀',pos:'DF'},
+  {n:'코디 갓포',nat:'🇳🇱 네덜란드',team:'리버풀',pos:'FW'},
+  // 🇧🇪 벨기에
+  {n:'케빈 데브라위너',nat:'🇧🇪 벨기에',team:'맨체스터 시티',pos:'MF'},
+  {n:'로멜루 루카쿠',nat:'🇧🇪 벨기에',team:'나폴리',pos:'FW'},
+  {n:'티보 쿠르투아',nat:'🇧🇪 벨기에',team:'레알 마드리드',pos:'GK'},
+  // 🇮🇹 이탈리아
+  {n:'페데리코 키에사',nat:'🇮🇹 이탈리아',team:'리버풀',pos:'FW'},
+  {n:'니콜로 바렐라',nat:'🇮🇹 이탈리아',team:'인테르 밀란',pos:'MF'},
+  {n:'지안루이지 돈나룸마',nat:'🇮🇹 이탈리아',team:'PSG',pos:'GK'},
+  // Africa & others
+  {n:'모하메드 살라',nat:'🇪🇬 이집트',team:'리버풀',pos:'FW'},
+  {n:'사디오 마네',nat:'🇸🇳 세네갈',team:'알나스르',pos:'FW'},
+  {n:'빅터 오시멘',nat:'🇳🇬 나이지리아',team:'갈라타사라이',pos:'FW'},
+  {n:'아크라프 하키미',nat:'🇲🇦 모로코',team:'PSG',pos:'DF'},
+  {n:'앙드레 오나나',nat:'🇨🇲 카메룬',team:'맨체스터 유나이티드',pos:'GK'},
+  {n:'다르윈 누녜스',nat:'🇺🇾 우루과이',team:'리버풀',pos:'FW'},
+  {n:'루카 모드리치',nat:'🇭🇷 크로아티아',team:'레알 마드리드',pos:'MF'},
+  {n:'알렉산더 이사크',nat:'🇸🇪 스웨덴',team:'뉴캐슬',pos:'FW'},
+  {n:'크리스티안 풀리시치',nat:'🇺🇸 미국',team:'AC 밀란',pos:'FW'},
+  {n:'로베르트 레반도프스키',nat:'🇵🇱 폴란드',team:'바르셀로나',pos:'FW'},
+  {n:'루이스 디아스',nat:'🇨🇴 콜롬비아',team:'리버풀',pos:'FW'},
+  {n:'미하일로 무드리크',nat:'🇺🇦 우크라이나',team:'첼시',pos:'FW'},
+  {n:'마르셀 자비처',nat:'🇦🇹 오스트리아',team:'첼시',pos:'MF'},
+  {n:'모하메드 쿠다스',nat:'🇬🇭 가나',team:'아스날',pos:'MF'},
+  {n:'밀란 슈크리니아르',nat:'🇸🇰 슬로바키아',team:'PSG',pos:'DF'},
+  {n:'키에란 트리피어',nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿 잉글랜드',team:'뉴캐슬',pos:'DF'},
+  {n:'아흐마두 디알로',nat:'🇸🇳 세네갈',team:'도르트문트',pos:'DF'},
+  {n:'다비드 라야',nat:'🇪🇸 스페인',team:'아스날',pos:'GK'},
+  {n:'라이언 그라벤베르흐',nat:'🇳🇱 네덜란드',team:'리버풀',pos:'MF'},
+  {n:'워렌 자이르에메리',nat:'🇫🇷 프랑스',team:'아스날',pos:'MF'},
+  {n:'페드루 네투',nat:'🇵🇹 포르투갈',team:'첼시',pos:'FW'},
+  {n:'마르쿠스 라슈포드',nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿 잉글랜드',team:'아스톤 빌라',pos:'FW'},
+  {n:'올리버 지루',nat:'🇫🇷 프랑스',team:'LA FC',pos:'FW'},
+  {n:'앙헬 디 마리아',nat:'🇦🇷 아르헨티나',team:'벤피카',pos:'FW'},
+  {n:'레나토 사친',nat:'🇧🇷 브라질',team:'바이에른 뮌헨',pos:'MF'},
+  {n:'요나스 빈트',nat:'🇩🇪 독일',team:'레버쿠젠',pos:'MF'},
+  {n:'그라니트 자카',nat:'🇨🇭 스위스',team:'바르셀로나',pos:'MF'},
+];
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+let user = null;
+let collection = [];
+let pending = [];
+let flipped = 0;
+let customIdx = -1;
+let editId = null;
+let detailId = null;
+let filter = 'all';
+
+// ═══════════════════════════════════════════════════════
+// CARD GENERATION
+// ═══════════════════════════════════════════════════════
+function rollTier() {
+  let r = Math.random(), c = 0;
+  for (const t of TIERS) { c += t.rate; if (r < c) return t; }
+  return TIERS[0];
+}
+
+function genStats(tier, pos) {
+  const w = PW[pos] || PW.MF;
+  const total = Math.floor(tier.max * (.78 + Math.random() * .22));
+  const ks = ['atk','pas','def','spd','stm'];
+  let raw = {}, rs = 0;
+  ks.forEach(k => { raw[k] = w[k] * (.6 + Math.random() * .8); rs += raw[k]; });
+  let st = {}, asgn = 0;
+  ks.slice(0,-1).forEach(k => {
+    st[k] = Math.max(1, Math.min(99, Math.round(raw[k]/rs*total)));
+    asgn += st[k];
+  });
+  st.stm = Math.max(1, Math.min(99, total - asgn));
+  st.total = ks.reduce((s,k) => s + st[k], 0);
+  return st;
+}
+
+function makeCard(isCustom) {
+  const tier = rollTier();
+  if (isCustom) {
+    const pos = ['FW','MF','DF','GK'][Math.floor(Math.random()*4)];
+    return {
+      id: crypto.randomUUID(), user_id: user.id,
+      tier: tier.id, name:'???', nat:'', team:'', pos,
+      is_custom: true, obtained_at: new Date().toISOString(),
+      ...genStats(tier, pos),
+    };
+  }
+  const p = PLAYERS[Math.floor(Math.random()*PLAYERS.length)];
+  return {
+    id: crypto.randomUUID(), user_id: user.id,
+    tier: tier.id, name: p.n, nat: p.nat, team: p.team, pos: p.pos,
+    is_custom: false, obtained_at: new Date().toISOString(),
+    ...genStats(tier, p.pos),
+  };
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER CARD
+// ═══════════════════════════════════════════════════════
+function cardHTML(c, lg=false) {
+  const tier = TIERS.find(t => t.id === c.tier);
+  const s = lg ? ' lg' : '';
+  const isBlank = c.is_custom && c.name === '???';
+  const avatar = isBlank
+    ? `<div class="custom-ph"><div class="ph-icon">✏️</div><span>자유카드!</span></div>`
+    : SVG[c.pos] || SVG.FW;
+  return `<div class="card ${c.tier}${s}">
+    <div class="card-top">
+      <span class="card-pos">${c.pos}</span>
+      <span class="card-total">${c.total}</span>
+      <span class="tier-badge">${tier.lbl}</span>
+    </div>
+    <div class="card-avatar">${avatar}</div>
+    <div class="card-name">${c.name}</div>
+    <div class="card-meta">${c.nat} ${c.team}</div>
+    <div class="card-stats">
+      <div class="stat"><span class="s-lbl">ATK</span><span class="s-val">${c.atk}</span></div>
+      <div class="stat"><span class="s-lbl">PAS</span><span class="s-val">${c.pas}</span></div>
+      <div class="stat"><span class="s-lbl">DEF</span><span class="s-val">${c.def}</span></div>
+      <div class="stat"><span class="s-lbl">SPD</span><span class="s-val">${c.spd}</span></div>
+      <div class="stat"><span class="s-lbl">STM</span><span class="s-val">${c.stm}</span></div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════════
+async function doLogin() {
+  const nick = document.getElementById('lnick').value.trim();
+  const pin  = document.getElementById('lpin').value.trim();
+  if (!nick)                        { toast('닉네임을 입력해!'); return; }
+  if (!/^\d{4}$/.test(pin))         { toast('PIN은 숫자 4자리야!'); return; }
+  load(true);
+  try {
+    const rows = await db.get('tys_card_users', `nickname=eq.${encodeURIComponent(nick)}&limit=1`);
+    let u;
+    if (!rows.length) {
+      const res = await db.post('tys_card_users', { nickname:nick, pin });
+      if (!res?.[0]) { toast('계정 만들기 실패... 다시 해봐.'); return; }
+      u = res[0];
+      toast(`환영해, ${nick}! 🎉`);
+    } else {
+      if (rows[0].pin !== pin) { toast('PIN이 틀렸어!'); return; }
+      u = rows[0];
+    }
+    user = { id:u.id, nickname:u.nickname };
+    localStorage.setItem('sc_sess', JSON.stringify(user));
+    collection = await db.get('tys_cards', `user_id=eq.${user.id}&order=obtained_at.desc`);
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('nav').style.display = 'flex';
+    go('pack');
+  } finally { load(false); }
+}
+
+// ═══════════════════════════════════════════════════════
+// PACK
+// ═══════════════════════════════════════════════════════
+async function canOpen() {
+  return true; // DEV: 무제한 오픈
+}
+
+function nextTime() {
+  const now = new Date();
+  const tom = new Date(now); tom.setDate(tom.getDate()+1); tom.setHours(0,0,0,0);
+  const d = tom - now;
+  return `${Math.floor(d/3600000)}시간 ${Math.floor((d%3600000)/60000)}분 후에 열 수 있어!`;
+}
+
+async function doOpen() {
+  load(true);
+  const ok = await canOpen();
+  if (!ok) { load(false); toast('오늘은 이미 열었어! ' + nextTime()); return; }
+  await db.upsert('tys_pack_opens', { user_id:user.id, last_opened_at:new Date().toISOString() });
+  load(false);
+  pending = Array.from({length:5}, () => makeCard(Math.random() < .10));
+  flipped = 0;
+  go('reveal');
+}
+
+// ═══════════════════════════════════════════════════════
+// REVEAL
+// ═══════════════════════════════════════════════════════
+function renderReveal() {
+  document.getElementById('cRow').innerHTML = pending.map((c,i) => `
+    <div class="card-slot">
+      <div class="flipper" id="fl${i}" onclick="flipCard(${i})">
+        <div class="c-back">⚽</div>
+        <div class="c-front">${cardHTML(c)}</div>
+      </div>
+    </div>`).join('');
+  document.getElementById('flipAllBtn').style.display = '';
+  document.getElementById('saveBtn').disabled = true;
+  document.getElementById('revealSub').textContent = '카드를 탭해서 공개해봐!';
+}
+
+function flipCard(i) {
+  const el = document.getElementById('fl'+i);
+  if (el.classList.contains('flipped')) return;
+  el.classList.add('flipped');
+  flipped++;
+  if (pending[i].is_custom) setTimeout(() => openCustomInput(i), 660);
+  checkDone();
+}
+
+function flipAll() {
+  pending.forEach((_,i) => {
+    const el = document.getElementById('fl'+i);
+    if (!el.classList.contains('flipped')) { el.classList.add('flipped'); flipped++; }
+  });
+  const customs = pending.map((c,i) => c.is_custom ? i : -1).filter(i => i >= 0);
+  if (customs.length) setTimeout(() => openCustomInput(customs[0]), 680);
+  checkDone();
+}
+
+function checkDone() {
+  if (flipped >= pending.length) {
+    document.getElementById('flipAllBtn').style.display = 'none';
+    document.getElementById('saveBtn').disabled = false;
+    document.getElementById('revealSub').textContent = '바인더에 저장하자! 👇';
+  }
+}
+
+async function saveCards() {
+  load(true);
+  try {
+    const rows = pending.map(c => ({
+      id:c.id, user_id:c.user_id, tier:c.tier,
+      name:c.name, nat:c.nat, team:c.team, pos:c.pos,
+      atk:c.atk, pas:c.pas, def:c.def, spd:c.spd, stm:c.stm,
+      total:c.total, is_custom:c.is_custom, obtained_at:c.obtained_at,
+    }));
+    await db.post('tys_cards', rows);
+    collection = [...pending, ...collection];
+    toast('카드 5장 바인더에 저장! 🎉');
+    go('binder');
+  } finally { load(false); }
+}
+
+// ═══════════════════════════════════════════════════════
+// CUSTOM CARD
+// ═══════════════════════════════════════════════════════
+function openCustomInput(idx) {
+  customIdx = idx;
+  editId = null;
+  const c = pending[idx];
+  document.getElementById('cfPos').value = c.pos;
+  document.getElementById('cfName').value = '';
+  document.getElementById('cfTeam').value = '';
+  document.getElementById('customOv').classList.add('open');
+}
+
+function openEdit() {
+  const c = collection.find(x => x.id === detailId);
+  if (!c) return;
+  editId = c.id;
+  customIdx = -1;
+  document.getElementById('cfName').value  = c.name !== '???' ? c.name : '';
+  document.getElementById('cfNat').value   = c.nat  || '🇰🇷 한국';
+  document.getElementById('cfTeam').value  = c.team || '';
+  document.getElementById('cfPos').value   = c.pos;
+  closeD();
+  document.getElementById('customOv').classList.add('open');
+}
+
+async function submitCustom() {
+  const name = document.getElementById('cfName').value.trim();
+  const nat  = document.getElementById('cfNat').value;
+  const team = document.getElementById('cfTeam').value.trim();
+  const pos  = document.getElementById('cfPos').value;
+  if (!name) { toast('이름을 입력해줘!'); return; }
+
+  document.getElementById('customOv').classList.remove('open');
+
+  if (customIdx >= 0) {
+    const c = pending[customIdx];
+    const st = genStats(TIERS.find(t=>t.id===c.tier), pos);
+    Object.assign(c, { name, nat, team, pos, ...st });
+    const wrap = document.querySelector(`#fl${customIdx} .c-front`);
+    if (wrap) wrap.innerHTML = cardHTML(c);
+
+    // Check if more custom cards need filling (from flipAll)
+    const nextCustom = pending.findIndex((x,i) => i > customIdx && x.is_custom && x.name === '???');
+    if (nextCustom >= 0) setTimeout(() => openCustomInput(nextCustom), 300);
+    customIdx = -1;
+  } else if (editId) {
+    load(true);
+    const c = collection.find(x => x.id === editId);
+    const st = genStats(TIERS.find(t=>t.id===c.tier), pos);
+    const upd = { name, nat, team, pos, ...st };
+    await db.patch('tys_cards', `id=eq.${editId}`, upd);
+    Object.assign(c, upd);
+    load(false);
+    renderBinder();
+    toast('수정 완료! ✏️');
+    editId = null;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// BINDER
+// ═══════════════════════════════════════════════════════
+function setF(f) {
+  filter = f;
+  document.querySelectorAll('.f-btn').forEach(b => b.classList.toggle('active', b.dataset.f === f));
+  renderBinder();
+}
+
+function renderBinder() {
+  const grid = document.getElementById('bgrid');
+  document.getElementById('btotal').textContent = `${collection.length}장`;
+  let list = filter === 'all' ? [...collection] : collection.filter(c => c.tier === filter);
+  list.sort((a,b) => TORD[a.tier] - TORD[b.tier]);
+  if (!list.length) {
+    grid.innerHTML = `<div class="binder-empty">
+      ${collection.length === 0 ? '⚽<br>아직 카드가 없어!<br>팩을 열어봐!' : '이 등급 카드가 없어.'}
+    </div>`;
+    return;
+  }
+  grid.innerHTML = list.map(c =>
+    `<div class="b-item" onclick="showDetail('${c.id}')">${cardHTML(c)}</div>`
+  ).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// DETAIL MODAL
+// ═══════════════════════════════════════════════════════
+function showDetail(id) {
+  detailId = id;
+  const c = collection.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('dcard').innerHTML = cardHTML(c, true);
+  document.getElementById('editBtn').style.display = c.is_custom ? '' : 'none';
+  document.getElementById('detailOv').classList.add('open');
+}
+
+function closeD() { document.getElementById('detailOv').classList.remove('open'); }
+function closeDifBg(e) { if (e.target===document.getElementById('detailOv')) closeD(); }
+
+// ═══════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════
+function go(name) {
+  ['pack','reveal','battle','binder'].forEach(s => document.getElementById(s+'Screen').classList.remove('active'));
+  ['Pack','Battle','Binder'].forEach(b => document.getElementById('nav'+b).classList.remove('active'));
+  document.getElementById(name+'Screen').classList.add('active');
+  if (name==='pack')   { document.getElementById('navPack').classList.add('active'); updatePackUI(); }
+  if (name==='reveal') { document.getElementById('navPack').classList.add('active'); renderReveal(); }
+  if (name==='battle') { document.getElementById('navBattle').classList.add('active'); btShowMode(); }
+  if (name==='binder') { document.getElementById('navBinder').classList.add('active'); renderBinder(); }
+}
+
+async function updatePackUI() {
+  if (!user) return;
+  document.getElementById('pgreet').textContent = `안녕, ${user.nickname}! 👋`;
+  document.getElementById('pcount').textContent = `보유 카드: ${collection.length}장`;
+  const ok = await canOpen();
+  document.getElementById('openBtn').disabled = !ok;
+  document.getElementById('ptimer').textContent = ok
+    ? '매일 한 번 팩을 열 수 있어!'
+    : nextTime();
+}
+
+// ═══════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+function load(on) { document.getElementById('ld').classList.toggle('off', !on); }
+
+function doLogout() {
+  localStorage.removeItem('sc_sess');
+  user = null;
+  collection = [];
+  document.getElementById('nav').style.display = 'none';
+  ['pack','reveal','binder'].forEach(s => document.getElementById(s+'Screen').classList.remove('active'));
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginScreen').classList.add('active');
+  document.getElementById('lnick').value = '';
+  document.getElementById('lpin').value = '';
+}
+
+// ═══════════════════════════════════════════════════════
+// BATTLE
+// ═══════════════════════════════════════════════════════
+const STATS = ['atk','pas','def','spd','stm'];
+const STAT_LBL = {atk:'ATK',pas:'PAS',def:'DEF',spd:'SPD',stm:'STM',total:'TOTAL'};
+const PARTY_URL = 'wss://card-battle.buoshllim.partykit.dev/parties/main';
+
+let bt = {
+  mode: null,         // 'solo' | 'multi'
+  myCard: null,
+  cpuCard: null,
+  round: 1,
+  myUsed: [],
+  cpuUsed: [],
+  myScore: 0,
+  cpuScore: 0,
+  rounds: [],
+  roundPending: false, // waiting for next-round tap
+  // multiplayer
+  ws: null,
+  role: null,         // 'home' | 'away'
+  roomCode: null,
+  serverState: null,
+};
+
+function btSub(id) {
+  ['btMode','btMulti','btCardSel','btArena','btFinal'].forEach(s => {
+    document.getElementById(s).style.display = s === id ? '' : 'none';
+  });
+}
+
+function btShowMode() {
+  btCleanupWs();
+  bt = { mode:null, myCard:null, cpuCard:null, round:1, myUsed:[], cpuUsed:[], myScore:0, cpuScore:0, rounds:[], roundPending:false, ws:null, role:null, roomCode:null, serverState:null };
+  btSub('btMode');
+}
+
+function btShowMulti() {
+  document.getElementById('btMultiLobby').style.display = '';
+  document.getElementById('btMultiWaiting').style.display = 'none';
+  document.getElementById('btRoomInput').value = '';
+  btSub('btMulti');
+}
+
+// ── Card select ──
+function btStartSolo() {
+  bt.mode = 'solo';
+  btShowCardSel('카드를 골라봐! (CPU와 배틀)');
+}
+
+function btShowCardSel(title) {
+  document.getElementById('btCardSelTitle').textContent = title;
+  const grid = document.getElementById('btCardGrid');
+  if (!collection.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:#666;padding:40px 0">카드가 없어!<br>팩을 먼저 열어봐 🎴</div>`;
+  } else {
+    const sorted = [...collection].sort((a,b) => b.total - a.total);
+    grid.innerHTML = sorted.map(c =>
+      `<div class="bt-csel-item" id="bcs_${c.id}" onclick="btSelectCard('${c.id}')">${cardHTML(c)}</div>`
+    ).join('');
+  }
+  btSub('btCardSel');
+}
+
+function btSelectCard(id) {
+  document.querySelectorAll('.bt-csel-item').forEach(el => el.classList.remove('selected'));
+  document.getElementById('bcs_'+id).classList.add('selected');
+  bt.myCard = collection.find(c => c.id === id);
+  setTimeout(() => {
+    if (bt.mode === 'solo') btStartArena();
+    else btMultiSendCard();
+  }, 200);
+}
+
+// ── Solo arena ──
+function btStartArena() {
+  if (bt.mode === 'solo') {
+    bt.cpuCard = makeCard(false);
+    bt.cpuCard.name = 'CPU 선수';
+  }
+  btRenderArena();
+  btSub('btArena');
+}
+
+function btRenderArena() {
+  const my = bt.myCard, opp = bt.mode === 'solo' ? bt.cpuCard : btGetOppCard();
+  document.getElementById('btRoundLbl').textContent = `Round ${bt.round} / 5`;
+  document.getElementById('btScoreLbl').textContent = `${bt.myScore} : ${(bt.mode === 'solo' ? bt.cpuScore : btGetOppScore())}`;
+
+  const myStatHighlight = bt.rounds.length ? STAT_LBL[bt.rounds[bt.rounds.length-1]?.myStat] : '';
+  document.getElementById('btVs').innerHTML = `
+    <div class="bt-vs-side">
+      <div class="bt-vs-lbl">나</div>
+      <div class="bt-card-sm">${cardHTML(my)}</div>
+    </div>
+    <div class="bt-vs-sep">VS</div>
+    <div class="bt-vs-side">
+      <div class="bt-vs-lbl">${bt.mode==='solo' ? 'CPU' : '상대'}</div>
+      <div class="bt-card-sm">${cardHTML(opp)}</div>
+    </div>`;
+
+  document.getElementById('btRoundResult').style.display = 'none';
+  document.getElementById('btStatRow').style.display = '';
+
+  const allUsed = bt.myUsed.length >= 5;
+  document.getElementById('btStatTitle').textContent = allUsed ? '모든 라운드 완료!' : '어떤 능력치로 배틀할까?';
+  document.getElementById('btStatBtns').innerHTML = STATS.map(s => {
+    const used = bt.myUsed.includes(s);
+    return `<button class="bt-stat-btn${used?' used':''}" onclick="btPickStat('${s}')" ${used||bt.roundPending?'disabled':''}>
+      <span>${my[s]}</span><span class="bt-stat-key">${STAT_LBL[s]}</span>
+    </button>`;
+  }).join('');
+}
+
+function btPickStat(stat) {
+  if (bt.myUsed.includes(stat) || bt.roundPending) return;
+  bt.roundPending = true;
+
+  // CPU greedy: pick its best remaining stat
+  let cpuStat;
+  if (bt.mode === 'solo') {
+    const remaining = STATS.filter(s => !bt.cpuUsed.includes(s));
+    cpuStat = remaining.reduce((best, s) => bt.cpuCard[s] > bt.cpuCard[best] ? s : best, remaining[0]);
+  }
+
+  const myVal = bt.myCard[stat];
+  const oppVal = bt.mode === 'solo' ? bt.cpuCard[cpuStat] : null; // multi handled elsewhere
+
+  if (bt.mode === 'solo') {
+    bt.myUsed.push(stat);
+    bt.cpuUsed.push(cpuStat);
+    let w;
+    if (myVal > oppVal)       { w = 'my'; bt.myScore++; }
+    else if (oppVal > myVal)  { w = 'opp'; bt.cpuScore++; }
+    else                      { w = 'draw'; bt.myScore += 0.5; bt.cpuScore += 0.5; }
+    const result = { round: bt.round, myStat: stat, oppStat: cpuStat, myVal, oppVal, winner: w };
+    bt.rounds.push(result);
+    btShowRoundResult(result, myVal, oppVal, stat, cpuStat);
+  }
+}
+
+function btShowRoundResult(result, myVal, oppVal, myStat, oppStat) {
+  const isLast = bt.round >= 5;
+  const winText = result.winner === 'my' ? '내가 이겼다! 🎉' : result.winner === 'opp' ? '졌어... 😅' : '비겼어! 🤝';
+  const cls = result.winner === 'my' ? 'bt-rr-win' : result.winner === 'opp' ? 'bt-rr-lose' : 'bt-rr-draw';
+  document.getElementById('btStatRow').style.display = 'none';
+  document.getElementById('btRoundResult').style.display = '';
+  document.getElementById('btRoundResult').innerHTML = `
+    <div class="bt-rr">
+      <div class="${cls}">${winText}</div>
+      <div class="bt-rr-detail">
+        내 ${STAT_LBL[myStat]} <strong>${myVal}</strong> vs 상대 ${STAT_LBL[oppStat]} <strong>${oppVal}</strong>
+      </div>
+      <div style="font-size:13px;color:#888">현재 스코어: ${bt.myScore} : ${bt.mode==='solo'?bt.cpuScore:btGetOppScore()}</div>
+      <button class="bt-next-btn" onclick="${isLast ? 'btFinishSolo()' : 'btNextRound()'}">${isLast ? '결과 보기! 🏆' : '다음 라운드! →'}</button>
+    </div>`;
+}
+
+function btNextRound() {
+  bt.round++;
+  bt.roundPending = false;
+  btRenderArena();
+}
+
+function btFinishSolo() {
+  // Round 6: total comparison
+  const myTotal = bt.myCard.total, oppTotal = bt.cpuCard.total;
+  let tw;
+  if (myTotal > oppTotal)      { tw = 'my'; bt.myScore++; }
+  else if (oppTotal > myTotal) { tw = 'opp'; bt.cpuScore++; }
+  else                         { tw = 'draw'; bt.myScore += 0.5; bt.cpuScore += 0.5; }
+  bt.rounds.push({ round: 6, myStat: 'total', oppStat: 'total', myVal: myTotal, oppVal: oppTotal, winner: tw });
+
+  let finalWinner, icon, title;
+  if (bt.myScore > bt.cpuScore)       { finalWinner = 'my'; icon = '🏆'; title = '승리! 최고야!'; }
+  else if (bt.cpuScore > bt.myScore)  { finalWinner = 'opp'; icon = '😅'; title = '패배... 다시 도전!'; }
+  else                                { finalWinner = 'draw'; icon = '🤝'; title = '무승부!'; }
+
+  btShowFinal(finalWinner, icon, title, bt.myScore, bt.cpuScore, '나', 'CPU');
+}
+
+function btShowFinal(winner, icon, title, myScore, oppScore, myLbl, oppLbl) {
+  const rowsHTML = bt.rounds.map(r => {
+    const myW = r.winner === 'my', oppW = r.winner === 'opp', isDraw = r.winner === 'draw';
+    const cls = myW ? 'home-win' : oppW ? 'away-win' : 'draw-row';
+    const lbl = r.round === 6 ? '(TOTAL)' : `Round ${r.round}`;
+    return `<div class="bt-fr-row ${cls}">
+      <span class="bt-fr-left">${STAT_LBL[r.myStat]} ${r.myVal}</span>
+      <span style="font-size:10px;color:#444">${lbl}</span>
+      <span class="bt-fr-right">${r.oppVal} ${STAT_LBL[r.oppStat]}</span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('btFinal').innerHTML = `
+    <div class="bt-final">
+      <div class="bt-final-icon">${icon}</div>
+      <div class="bt-final-title">${title}</div>
+      <div class="bt-final-score">${myLbl} ${myScore} : ${oppScore} ${oppLbl}</div>
+      <div class="bt-final-rounds">${rowsHTML}</div>
+      <button class="bt-next-btn" onclick="btStartSolo()" style="width:100%">다시 배틀! ⚔️</button>
+      <button class="bt-replay-btn" onclick="btShowMode()">모드 선택으로</button>
+    </div>`;
+  btSub('btFinal');
+}
+
+// ── Multiplayer ──
+function btCreateRoom() {
+  const code = Math.random().toString(36).substring(2,8).toUpperCase();
+  bt.roomCode = code;
+  btConnectWs(code);
+}
+
+function btJoinRoom() {
+  const code = document.getElementById('btRoomInput').value.trim().toUpperCase();
+  if (code.length < 4) { toast('코드를 입력해!'); return; }
+  bt.roomCode = code;
+  btConnectWs(code);
+}
+
+function btConnectWs(code) {
+  btCleanupWs();
+  bt.mode = 'multi';
+  const ws = new WebSocket(`${PARTY_URL}/${code}`);
+  bt.ws = ws;
+
+  ws.onopen = () => {};
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'assigned') {
+      bt.role = msg.role;
+      document.getElementById('btMultiLobby').style.display = 'none';
+      document.getElementById('btMultiWaiting').style.display = '';
+      document.getElementById('btRoomCode').textContent = code;
+    }
+    if (msg.type === 'error') { toast(msg.msg); btCleanupWs(); btShowMulti(); }
+    if (msg.type === 'state') btHandleServerState(msg.state);
+  };
+  ws.onerror = () => { toast('연결 오류!'); btCleanupWs(); };
+  ws.onclose = () => { if (bt.mode === 'multi' && bt.serverState?.phase !== 'done') toast('연결이 끊겼어!'); };
+}
+
+function btHandleServerState(state) {
+  bt.serverState = state;
+  const mySlot = state[bt.role];
+  const oppSlot = state[bt.role === 'home' ? 'away' : 'home'];
+
+  if (state.phase === 'card_select' && !mySlot?.card) {
+    btShowCardSel('카드를 골라봐! (친구와 배틀)');
+    return;
+  }
+  if (state.phase === 'card_select' && mySlot?.card && !oppSlot?.card) {
+    btSub('btArena');
+    document.getElementById('btVs').innerHTML = `<div style="text-align:center;padding:40px 0;color:#888">상대방이 카드 고르는 중... ⏳</div>`;
+    document.getElementById('btStatRow').style.display = 'none';
+    document.getElementById('btRoundResult').style.display = 'none';
+    return;
+  }
+  if (state.phase === 'picking' || (state.phase === 'picking' && mySlot?.pickedStat)) {
+    bt.myCard = mySlot.card;
+    bt.myUsed = mySlot.usedStats;
+    bt.round = state.round;
+    bt.myScore = mySlot.score;
+    bt.rounds = state.rounds.map(r => ({
+      round: r.round,
+      myStat: bt.role === 'home' ? r.homeStat : r.awayStat,
+      oppStat: bt.role === 'home' ? r.awayStat : r.homeStat,
+      myVal: bt.role === 'home' ? r.homeVal : r.awayVal,
+      oppVal: bt.role === 'home' ? r.awayVal : r.homeVal,
+      winner: r.winner === bt.role ? 'my' : r.winner === 'draw' ? 'draw' : 'opp',
+    }));
+    btSub('btArena');
+    btRenderMultiArena(state, mySlot, oppSlot);
+    return;
+  }
+  if (state.phase === 'done') {
+    bt.myCard = mySlot.card;
+    bt.rounds = state.rounds.map(r => ({
+      round: r.round,
+      myStat: bt.role === 'home' ? r.homeStat : r.awayStat,
+      oppStat: bt.role === 'home' ? r.awayStat : r.homeStat,
+      myVal: bt.role === 'home' ? r.homeVal : r.awayVal,
+      oppVal: bt.role === 'home' ? r.awayVal : r.homeVal,
+      winner: r.winner === bt.role ? 'my' : r.winner === 'draw' ? 'draw' : 'opp',
+    }));
+    const iWin = state.winner === bt.role;
+    const isDraw = state.winner === 'draw';
+    const icon = iWin ? '🏆' : isDraw ? '🤝' : '😅';
+    const title = iWin ? '승리! 최고야!' : isDraw ? '무승부!' : '패배... 다시 도전!';
+    btShowFinal(iWin?'my':isDraw?'draw':'opp', icon, title, mySlot.score, oppSlot.score, '나', '상대');
+  }
+}
+
+function btRenderMultiArena(state, mySlot, oppSlot) {
+  const opp = oppSlot?.card;
+  document.getElementById('btRoundLbl').textContent = `Round ${state.round} / 5`;
+  document.getElementById('btScoreLbl').textContent = `${mySlot.score} : ${oppSlot?.score ?? 0}`;
+
+  document.getElementById('btVs').innerHTML = `
+    <div class="bt-vs-side">
+      <div class="bt-vs-lbl">나</div>
+      <div class="bt-card-sm">${cardHTML(mySlot.card)}</div>
+    </div>
+    <div class="bt-vs-sep">VS</div>
+    <div class="bt-vs-side">
+      <div class="bt-vs-lbl">상대</div>
+      <div class="bt-card-sm">${cardHTML(opp)}</div>
+    </div>`;
+
+  const myPicked = !!mySlot.pickedStat;
+  const oppPicked = !!oppSlot?.pickedStat;
+
+  if (myPicked && !oppPicked) {
+    // Waiting for opponent
+    document.getElementById('btStatRow').style.display = 'none';
+    document.getElementById('btRoundResult').style.display = '';
+    document.getElementById('btRoundResult').innerHTML = `<div class="bt-rr"><div class="bt-cpu-thinking">상대방이 고르는 중... ⏳</div></div>`;
+    return;
+  }
+
+  // Show last round result if rounds array has this round's result
+  const lastRound = state.rounds[state.rounds.length - 1];
+  if (lastRound && lastRound.round === state.round - 1) {
+    const myVal = bt.role === 'home' ? lastRound.homeVal : lastRound.awayVal;
+    const oppVal = bt.role === 'home' ? lastRound.awayVal : lastRound.homeVal;
+    const myStat = bt.role === 'home' ? lastRound.homeStat : lastRound.awayStat;
+    const oppStat = bt.role === 'home' ? lastRound.awayStat : lastRound.homeStat;
+    const myWin = lastRound.winner === bt.role;
+    const isDraw = lastRound.winner === 'draw';
+    const result = { winner: myWin ? 'my' : isDraw ? 'draw' : 'opp' };
+    document.getElementById('btStatRow').style.display = 'none';
+    document.getElementById('btRoundResult').style.display = '';
+    document.getElementById('btRoundResult').innerHTML = `
+      <div class="bt-rr">
+        <div class="${myWin?'bt-rr-win':isDraw?'bt-rr-draw':'bt-rr-lose'}">${myWin?'이겼다! 🎉':isDraw?'비겼어! 🤝':'졌어... 😅'}</div>
+        <div class="bt-rr-detail">내 ${STAT_LBL[myStat]} <strong>${myVal}</strong> vs 상대 ${STAT_LBL[oppStat]} <strong>${oppVal}</strong></div>
+        <button class="bt-next-btn" onclick="btMultiNextRound()">다음 라운드! →</button>
+      </div>`;
+    return;
+  }
+
+  document.getElementById('btRoundResult').style.display = 'none';
+  document.getElementById('btStatRow').style.display = '';
+  document.getElementById('btStatTitle').textContent = '어떤 능력치로 배틀할까?';
+  document.getElementById('btStatBtns').innerHTML = STATS.map(s => {
+    const used = mySlot.usedStats.includes(s);
+    return `<button class="bt-stat-btn${used?' used':''}" onclick="btMultiPickStat('${s}')" ${used||myPicked?'disabled':''}>
+      <span>${mySlot.card[s]}</span><span class="bt-stat-key">${STAT_LBL[s]}</span>
+    </button>`;
+  }).join('');
+}
+
+function btMultiPickStat(stat) {
+  if (!bt.ws || bt.ws.readyState !== WebSocket.OPEN) return;
+  bt.ws.send(JSON.stringify({ type: 'pick_stat', stat }));
+}
+
+function btMultiSendCard() {
+  if (!bt.ws || bt.ws.readyState !== WebSocket.OPEN) { toast('연결이 없어!'); return; }
+  bt.ws.send(JSON.stringify({ type: 'select_card', card: bt.myCard }));
+}
+
+function btMultiNextRound() {
+  // Just re-render; next pick will update state
+  const state = bt.serverState;
+  if (!state) return;
+  const mySlot = state[bt.role];
+  const oppSlot = state[bt.role === 'home' ? 'away' : 'home'];
+  btRenderMultiArena(state, mySlot, oppSlot);
+}
+
+function btGetOppCard() { return bt.mode === 'multi' ? bt.serverState?.[bt.role==='home'?'away':'home']?.card : bt.cpuCard; }
+function btGetOppScore() { return bt.mode === 'multi' ? (bt.serverState?.[bt.role==='home'?'away':'home']?.score ?? 0) : bt.cpuScore; }
+
+function btLeaveRoom() { btCleanupWs(); btShowMulti(); }
+
+function btCleanupWs() {
+  if (bt.ws) { bt.ws.onclose = null; bt.ws.close(); bt.ws = null; }
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+(async () => {
+  const sess = localStorage.getItem('sc_sess');
+  if (sess) {
+    try {
+      const s = JSON.parse(sess);
+      load(true);
+      const rows = await db.get('tys_card_users', `id=eq.${s.id}&limit=1`);
+      if (rows.length) {
+        user = { id:rows[0].id, nickname:rows[0].nickname };
+        collection = await db.get('tys_cards', `user_id=eq.${user.id}&order=obtained_at.desc`);
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('nav').style.display = 'flex';
+        go('pack');
+      }
+    } catch(e) { localStorage.removeItem('sc_sess'); }
+    finally { load(false); }
+  }
+})();
+</script>
+</body>
+</html>
