@@ -553,14 +553,8 @@ function canvasPos(cx,cy) {
   const r=canvas.getBoundingClientRect();
   return {x:(cx-r.left)*(W/r.width), y:(cy-r.top)*(H/r.height)};
 }
-canvas.addEventListener('mousemove', e=>{
-  const {x,y}=canvasPos(e.clientX,e.clientY);
-  G.mouse={x,y};
-  if (G.phase==='korea_aim') G.aim={x,y};
-});
-canvas.addEventListener('click', e=>{
+function handleTap(x,y) {
   ga();
-  const {x,y}=canvasPos(e.clientX,e.clientY);
   if (G.phase==='intro') { if(x>=290&&x<=510&&y>=302&&y<=358) startGame(); return; }
   if (G.phase==='end')   { if(x>=280&&x<=520&&y>=395&&y<=451) startGame(); return; }
   if (G.phase==='korea_aim') {
@@ -571,9 +565,39 @@ canvas.addEventListener('click', e=>{
     G.keeper.diveDir=[-1,0,1][Math.floor(Math.random()*3)];
     G.ballFlying=true; G.phase='korea_kicking'; playKick(); return;
   }
+}
+let lastTouchTime=0;
+canvas.addEventListener('mousemove', e=>{
+  const {x,y}=canvasPos(e.clientX,e.clientY);
+  G.mouse={x,y};
+  if (G.phase==='korea_aim') G.aim={x,y};
 });
-canvas.addEventListener('touchstart',e=>{e.preventDefault();const t=e.touches[0];canvas.dispatchEvent(new MouseEvent('click',{clientX:t.clientX,clientY:t.clientY}));},{passive:false});
-canvas.addEventListener('touchmove',e=>{e.preventDefault();const t=e.touches[0];canvas.dispatchEvent(new MouseEvent('mousemove',{clientX:t.clientX,clientY:t.clientY}));},{passive:false});
+canvas.addEventListener('click', e=>{
+  if (Date.now()-lastTouchTime<500) return; // 터치 후 ghost click 무시
+  const {x,y}=canvasPos(e.clientX,e.clientY);
+  handleTap(x,y);
+});
+canvas.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  const t=e.touches[0];
+  const {x,y}=canvasPos(t.clientX,t.clientY);
+  G.mouse={x,y};
+  if (G.phase==='korea_aim') G.aim={x,y};
+},{passive:false});
+canvas.addEventListener('touchend',e=>{
+  e.preventDefault();
+  lastTouchTime=Date.now();
+  const t=e.changedTouches[0];
+  const {x,y}=canvasPos(t.clientX,t.clientY);
+  handleTap(x,y);
+},{passive:false});
+canvas.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  const t=e.touches[0];
+  const {x,y}=canvasPos(t.clientX,t.clientY);
+  G.mouse={x,y};
+  if (G.phase==='korea_aim') G.aim={x,y};
+},{passive:false});
 </script>
 </body>
 </html>
