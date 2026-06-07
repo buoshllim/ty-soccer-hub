@@ -1,0 +1,15 @@
+{
+  "name": "genius-tys",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "party:dev": "npx partykit dev",
+    "party:deploy": "npx partykit deploy"
+  },
+  "dependencies": {
+    "partykit": "^0.0.115"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

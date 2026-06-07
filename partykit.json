@@ -1,0 +1,5 @@
+{
+  "name": "card-battle",
+  "main": "party/battle.ts",
+  "compatibilityDate": "2026-06-06"
+}
