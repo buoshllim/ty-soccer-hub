@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Football Club</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0a0a0f;
+      color: #ffffff;
+      font-family: 'Arial', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* 페이지 숨기기/보이기 */
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    /* 공통 헤더 */
+    .header {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      border-bottom: 2px solid #00ff88;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header h1 {
+      font-size: 20px;
+      color: #00ff88;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    /* 홈 페이지 */
+    .home-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 80vh;
+      gap: 32px;
+      padding: 20px;
+    }
+
+    .club-name {
+      font-size: 36px;
+      font-weight: bold;
+      color: #ffffff;
+      text-align: center;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+
+    .club-subtitle {
+      font-size: 14px;
+      color: #888;
+      letter-spacing: 2px;
+    }
+
+    .home-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      width: 100%;
+      max-width: 300px;
+    }
+
+    /* 버튼 스타일 */
+    .btn-primary {
+      background: linear-gradient(135deg, #00ff88, #00cc6a);
+      color: #0a0a0f;
+      border: none;
+      padding: 16px 32px;
+      font-size: 16px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border-radius: 4px;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #00cc6a, #00aa55);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: #00ff88;
+      border: 2px solid #00ff88;
+      padding: 16px 32px;
+      font-size: 16px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border-radius: 4px;
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(0, 255, 136, 0.1);
+    }
+
+    .btn-back {
+      background: transparent;
+      color: #888;
+      border: 1px solid #333;
+      padding: 8px 16px;
+      font-size: 13px;
+      letter-spacing: 1px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .btn-back:hover {
+      color: #fff;
+      border-color: #fff;
+    }
+
+    /* 이적시장 페이지 */
+    .market-content {
+      padding: 20px;
+    }
+
+    .budget-bar {
+      background: #1a1a2e;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .budget-label {
+      font-size: 12px;
+      color: #888;
+      letter-spacing: 1px;
+    }
+
+    .budget-amount {
+      font-size: 24px;
+      font-weight: bold;
+      color: #00ff88;
+    }
+
+    /* 팀관리 페이지 */
+    .team-content { padding: 20px; }
+
+    /* 필터 버튼 */
+    .filter-btn {
+      background: #1a1a2e; color: #888; border: 1px solid #333;
+      padding: 6px 14px; font-size: 12px; border-radius: 20px; cursor: pointer;
+      letter-spacing: 1px;
+    }
+    .filter-btn.active { background: #00ff88; color: #0a0a0f; border-color: #00ff88; font-weight: bold; }
+
+    /* 선수 카드 */
+    .player-card {
+      background: #111122; border-radius: 8px; padding: 14px 16px;
+      margin-bottom: 10px; display: flex; align-items: center; gap: 12px;
+      border-left: 4px solid #333;
+    }
+    .player-card.rare   { border-left-color: #ff4444; }
+    .player-card.gold   { border-left-color: #ffd700; }
+    .player-card.silver { border-left-color: #c0c0c0; }
+    .player-card.fans   { border-left-color: #00aaff; }
+    .player-card.core   { border-left-color: #666; }
+
+    .tier-badge {
+      font-size: 9px; font-weight: bold; letter-spacing: 1px;
+      padding: 2px 6px; border-radius: 3px; white-space: nowrap;
+    }
+    .tier-badge.rare   { background:#ff4444; color:#fff; }
+    .tier-badge.gold   { background:#ffd700; color:#000; }
+    .tier-badge.silver { background:#c0c0c0; color:#000; }
+    .tier-badge.fans   { background:#00aaff; color:#fff; }
+    .tier-badge.core   { background:#555; color:#fff; }
+
+    .player-info { flex:1; }
+    .player-name { font-size: 15px; font-weight: bold; margin-bottom: 4px; }
+    .player-meta { font-size: 11px; color: #666; margin-bottom: 6px; }
+    .player-stats { display: flex; gap: 8px; flex-wrap: wrap; }
+    .stat-item { font-size: 10px; color: #aaa; }
+    .stat-item span { color: #00ff88; font-weight: bold; }
+    .player-price { font-size: 13px; font-weight: bold; color: #ffd700; white-space: nowrap; }
+    .btn-sign {
+      background: #00ff88; color: #0a0a0f; border: none;
+      padding: 8px 14px; font-size: 12px; font-weight: bold;
+      border-radius: 4px; cursor: pointer; white-space: nowrap;
+    }
+    .btn-sign:disabled { background: #333; color: #555; cursor: not-allowed; }
+    .btn-sell {
+      background: transparent; color: #ff4444; border: 1px solid #ff4444;
+      padding: 8px 14px; font-size: 12px; font-weight: bold;
+      border-radius: 4px; cursor: pointer; white-space: nowrap;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- 구단 설정 페이지 -->
+  <div id="page-setup" class="page active">
+    <div class="header">
+      <h1>MFC</h1>
+    </div>
+    <div class="home-content">
+      <div>
+        <div class="club-name">MY FOOTBALL CLUB</div>
+        <div class="club-subtitle">구단을 만들어봐!</div>
+      </div>
+      <div class="home-buttons">
+        <input type="text" id="input-clubname" placeholder="구단 이름을 입력해" style="background:#1a1a2e;border:2px solid #333;color:#fff;padding:14px 16px;font-size:16px;border-radius:4px;width:100%;outline:none;">
+        <div style="position:relative;width:100%;">
+          <input type="password" id="input-pin" placeholder="PIN 4자리 숫자" maxlength="4" style="background:#1a1a2e;border:2px solid #333;color:#fff;padding:14px 48px 14px 16px;font-size:16px;border-radius:4px;width:100%;outline:none;">
+          <button onclick="togglePin()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#888;font-size:18px;cursor:pointer;" id="pin-eye">👁</button>
+        </div>
+        <button class="btn-primary" onclick="startClub()">시작하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 홈 페이지 -->
+  <div id="page-home" class="page">
+    <div class="header" style="justify-content:space-between;">
+      <h1>MFC</h1>
+      <button class="btn-back" onclick="logout()">로그아웃</button>
+    </div>
+    <div class="home-content">
+      <div>
+        <div class="club-name">My Football Club</div>
+        <div class="club-subtitle">BUILD YOUR DREAM TEAM</div>
+      </div>
+      <div class="home-buttons">
+        <button class="btn-primary" onclick="goTo('page-market')">이적시장</button>
+        <button class="btn-secondary" onclick="goTo('page-team')">팀 관리</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 이적시장 페이지 -->
+  <div id="page-market" class="page">
+    <div class="header">
+      <button class="btn-back" onclick="goTo('page-home')">← 홈</button>
+      <h1>이적시장</h1>
+    </div>
+    <div class="market-content">
+      <div class="budget-bar">
+        <div class="budget-label">BUDGET</div>
+        <div class="budget-amount" id="budget-display">€250M</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+        <button class="filter-btn active" onclick="filterPlayers('all')">전체</button>
+        <button class="filter-btn" onclick="filterPlayers('FW')">FW</button>
+        <button class="filter-btn" onclick="filterPlayers('MF')">MF</button>
+        <button class="filter-btn" onclick="filterPlayers('DF')">DF</button>
+        <button class="filter-btn" onclick="filterPlayers('GK')">GK</button>
+        <button class="filter-btn" onclick="filterPlayers('rare')">RARE</button>
+        <button class="filter-btn" onclick="filterPlayers('gold')">GOLD</button>
+      </div>
+      <div id="player-list"></div>
+    </div>
+  </div>
+
+  <!-- 팀관리 페이지 -->
+  <div id="page-team" class="page">
+    <div class="header">
+      <button class="btn-back" onclick="goTo('page-home')">← 홈</button>
+      <h1>팀 관리</h1>
+    </div>
+    <div class="team-content">
+      <p style="color:#888; text-align:center; margin-top:40px;">포메이션·전술 준비 중...</p>
+    </div>
+  </div>
+
+  <script>
+    const TIERS = {
+      rare:   { lbl:'RARE',   mult:250000 },
+      gold:   { lbl:'GOLD',   mult:130000 },
+      silver: { lbl:'SILVER', mult:60000  },
+      fans:   { lbl:'FANS',   mult:25000  },
+      core:   { lbl:'CORE',   mult:8000   },
+    };
+
+    const PLAYERS = [
+      // RARE
+      {n:'킬리안 음바페',     nat:'🇫🇷', team:'레알 마드리드',        pos:'FW', tier:'rare',   pac:97,sho:90,pas:79,dri:92,def:38,phy:77},
+      {n:'얼링 홀란드',       nat:'🇳🇴', team:'맨체스터 시티',         pos:'FW', tier:'rare',   pac:88,sho:94,pas:65,dri:80,def:44,phy:89},
+      {n:'비니시우스 주니어',  nat:'🇧🇷', team:'레알 마드리드',         pos:'FW', tier:'rare',   pac:95,sho:83,pas:74,dri:92,def:32,phy:68},
+      {n:'손흥민',            nat:'🇰🇷', team:'토트넘',                pos:'FW', tier:'rare',   pac:91,sho:88,pas:81,dri:87,def:44,phy:72},
+      {n:'주드 벨링엄',       nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', team:'레알 마드리드', pos:'MF', tier:'rare',   pac:80,sho:76,pas:85,dri:83,def:72,phy:82},
+      {n:'케빈 데브라위너',   nat:'🇧🇪', team:'맨체스터 시티',         pos:'MF', tier:'rare',   pac:73,sho:77,pas:94,dri:86,def:64,phy:76},
+      // GOLD
+      {n:'리오넬 메시',       nat:'🇦🇷', team:'인테르 마이애미',        pos:'FW', tier:'gold',   pac:72,sho:85,pas:91,dri:90,def:32,phy:56},
+      {n:'크리스티아누 호날두',nat:'🇵🇹', team:'알나스르',              pos:'FW', tier:'gold',   pac:73,sho:90,pas:70,dri:77,def:33,phy:84},
+      {n:'모하메드 살라',     nat:'🇪🇬', team:'리버풀',                 pos:'FW', tier:'gold',   pac:87,sho:87,pas:80,dri:85,def:38,phy:72},
+      {n:'라민 야말',         nat:'🇪🇸', team:'바르셀로나',             pos:'FW', tier:'gold',   pac:90,sho:79,pas:77,dri:89,def:30,phy:62},
+      {n:'부카요 사카',       nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', team:'아스날',       pos:'FW', tier:'gold',   pac:85,sho:81,pas:81,dri:86,def:42,phy:71},
+      {n:'필 포든',           nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', team:'맨체스터 시티',pos:'MF', tier:'gold',   pac:81,sho:80,pas:84,dri:85,def:52,phy:67},
+      {n:'페드리',            nat:'🇪🇸', team:'바르셀로나',             pos:'MF', tier:'gold',   pac:75,sho:71,pas:88,dri:87,def:68,phy:64},
+      {n:'로드리',            nat:'🇪🇸', team:'맨체스터 시티',          pos:'MF', tier:'gold',   pac:63,sho:65,pas:86,dri:74,def:85,phy:78},
+      {n:'해리 케인',         nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', team:'바이에른 뮌헨',pos:'FW', tier:'gold',   pac:70,sho:92,pas:78,dri:77,def:43,phy:82},
+      {n:'로베르트 레반도프스키',nat:'🇵🇱',team:'바르셀로나',           pos:'FW', tier:'gold',   pac:74,sho:92,pas:72,dri:80,def:43,phy:81},
+      {n:'야말 무시알라',     nat:'🇩🇪', team:'바이에른 뮌헨',          pos:'MF', tier:'gold',   pac:82,sho:77,pas:82,dri:88,def:54,phy:67},
+      {n:'플로리안 비르츠',   nat:'🇩🇪', team:'바이에른 뮌헨',          pos:'MF', tier:'gold',   pac:79,sho:77,pas:86,dri:87,def:54,phy:67},
+      {n:'이강인',            nat:'🇰🇷', team:'PSG',                   pos:'MF', tier:'gold',   pac:73,sho:73,pas:87,dri:83,def:51,phy:59},
+      {n:'라우타로 마르티네스',nat:'🇦🇷',team:'인테르 밀란',            pos:'FW', tier:'gold',   pac:79,sho:87,pas:71,dri:82,def:43,phy:79},
+      {n:'앙투안 그리즈만',   nat:'🇫🇷', team:'아틀레티코 마드리드',    pos:'FW', tier:'gold',   pac:77,sho:82,pas:78,dri:81,def:49,phy:72},
+      {n:'루카 모드리치',     nat:'🇭🇷', team:'레알 마드리드',          pos:'MF', tier:'gold',   pac:67,sho:70,pas:90,dri:85,def:67,phy:62},
+      {n:'브루노 페르난데스', nat:'🇵🇹', team:'맨체스터 유나이티드',    pos:'MF', tier:'gold',   pac:71,sho:77,pas:86,dri:79,def:54,phy:71},
+      {n:'호드리구',          nat:'🇧🇷', team:'레알 마드리드',          pos:'FW', tier:'gold',   pac:86,sho:79,pas:74,dri:86,def:34,phy:64},
+      // SILVER
+      {n:'김민재',            nat:'🇰🇷', team:'바이에른',               pos:'DF', tier:'silver', pac:75,sho:37,pas:67,dri:54,def:88,phy:87},
+      {n:'버질 반다이크',     nat:'🇳🇱', team:'리버풀',                 pos:'DF', tier:'silver', pac:75,sho:37,pas:68,dri:57,def:88,phy:85},
+      {n:'마르키뉴스',        nat:'🇧🇷', team:'PSG',                   pos:'DF', tier:'silver', pac:78,sho:38,pas:70,dri:60,def:85,phy:80},
+      {n:'알리송',            nat:'🇧🇷', team:'리버풀',                 pos:'GK', tier:'silver', pac:80,sho:25,pas:80,dri:30,def:92,phy:85},
+      {n:'티보 쿠르투아',     nat:'🇧🇪', team:'레알 마드리드',          pos:'GK', tier:'silver', pac:79,sho:22,pas:76,dri:28,def:93,phy:87},
+      {n:'아크라프 하키미',   nat:'🇲🇦', team:'PSG',                   pos:'DF', tier:'silver', pac:88,sho:52,pas:70,dri:76,def:65,phy:70},
+      {n:'카세미루',          nat:'🇧🇷', team:'맨체스터 유나이티드',     pos:'MF', tier:'silver', pac:60,sho:60,pas:72,dri:62,def:84,phy:78},
+      {n:'루벤 디아스',       nat:'🇵🇹', team:'맨체스터 시티',          pos:'DF', tier:'silver', pac:72,sho:35,pas:68,dri:53,def:87,phy:82},
+      {n:'엔드리크',          nat:'🇧🇷', team:'레알 마드리드',          pos:'FW', tier:'silver', pac:84,sho:78,pas:65,dri:80,def:32,phy:75},
+      {n:'미토마 카오루',     nat:'🇯🇵', team:'브라이튼',               pos:'FW', tier:'silver', pac:88,sho:70,pas:68,dri:83,def:35,phy:62},
+      {n:'구보 다케후사',     nat:'🇯🇵', team:'레알 소시에다드',         pos:'MF', tier:'silver', pac:77,sho:68,pas:78,dri:80,def:45,phy:60},
+      {n:'황희찬',            nat:'🇰🇷', team:'울버햄튼',               pos:'FW', tier:'silver', pac:85,sho:73,pas:62,dri:74,def:39,phy:71},
+      {n:'이재성',            nat:'🇰🇷', team:'마인츠',                 pos:'MF', tier:'silver', pac:70,sho:63,pas:76,dri:70,def:63,phy:66},
+      {n:'리산드로 마르티네스',nat:'🇦🇷',team:'맨체스터 유나이티드',    pos:'DF', tier:'silver', pac:72,sho:35,pas:68,dri:55,def:86,phy:82},
+      {n:'로드리고 데파울',   nat:'🇦🇷', team:'아틀레티코 마드리드',    pos:'MF', tier:'silver', pac:75,sho:68,pas:82,dri:78,def:60,phy:67},
+      {n:'오렐리앙 추아메니', nat:'🇫🇷', team:'레알 마드리드',          pos:'MF', tier:'silver', pac:70,sho:52,pas:76,dri:65,def:78,phy:76},
+      {n:'카이 하버츠',       nat:'🇩🇪', team:'아스날',                 pos:'MF', tier:'silver', pac:72,sho:69,pas:73,dri:74,def:57,phy:69},
+      {n:'빅터 오시멘',       nat:'🇳🇬', team:'갈라타사라이',            pos:'FW', tier:'silver', pac:87,sho:82,pas:55,dri:72,def:32,phy:85},
+      {n:'알렉산더 이사크',   nat:'🇸🇪', team:'뉴캐슬',                 pos:'FW', tier:'silver', pac:83,sho:80,pas:65,dri:77,def:38,phy:73},
+      {n:'페데리코 키에사',   nat:'🇮🇹', team:'리버풀',                 pos:'FW', tier:'silver', pac:82,sho:74,pas:67,dri:78,def:40,phy:71},
+      {n:'다르윈 누녜스',     nat:'🇺🇾', team:'리버풀',                 pos:'FW', tier:'silver', pac:86,sho:76,pas:57,dri:73,def:35,phy:82},
+      {n:'루이스 디아스',     nat:'🇨🇴', team:'리버풀',                 pos:'FW', tier:'silver', pac:87,sho:73,pas:67,dri:82,def:35,phy:65},
+      {n:'마르쿠스 라슈포드', nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',team:'아스톤 빌라',  pos:'FW', tier:'silver', pac:84,sho:72,pas:66,dri:79,def:38,phy:72},
+      {n:'코디 갓포',         nat:'🇳🇱', team:'리버풀',                 pos:'FW', tier:'silver', pac:82,sho:72,pas:68,dri:78,def:38,phy:70},
+      {n:'니콜로 바렐라',     nat:'🇮🇹', team:'인테르 밀란',             pos:'MF', tier:'silver', pac:65,sho:62,pas:78,dri:70,def:71,phy:71},
+      {n:'사디오 마네',       nat:'🇸🇳', team:'알나스르',               pos:'FW', tier:'silver', pac:82,sho:75,pas:70,dri:80,def:37,phy:70},
+      {n:'엔도 와타루',       nat:'🇯🇵', team:'리버풀',                  pos:'MF', tier:'silver', pac:66,sho:58,pas:73,dri:67,def:76,phy:71},
+      {n:'크리스티안 풀리시치',nat:'🇺🇸',team:'AC 밀란',                pos:'FW', tier:'silver', pac:80,sho:73,pas:70,dri:80,def:38,phy:65},
+      // FANS
+      {n:'에밀리아노 마르티네스',nat:'🇦🇷',team:'아스톤 빌라',           pos:'GK', tier:'fans',   pac:76,sho:20,pas:73,dri:26,def:88,phy:82},
+      {n:'지안루이지 돈나룸마',nat:'🇮🇹',team:'PSG',                    pos:'GK', tier:'fans',   pac:77,sho:20,pas:71,dri:26,def:89,phy:84},
+      {n:'마이크 마이냥',     nat:'🇫🇷', team:'아스날',                  pos:'GK', tier:'fans',   pac:80,sho:22,pas:74,dri:28,def:87,phy:80},
+      {n:'마누엘 노이어',     nat:'🇩🇪', team:'바이에른 뮌헨',           pos:'GK', tier:'fans',   pac:74,sho:18,pas:72,dri:26,def:90,phy:82},
+      {n:'알바로 모라타',     nat:'🇪🇸', team:'AC 밀란',                 pos:'FW', tier:'fans',   pac:74,sho:76,pas:64,dri:70,def:39,phy:75},
+      {n:'로멜루 루카쿠',     nat:'🇧🇪', team:'나폴리',                  pos:'FW', tier:'fans',   pac:75,sho:80,pas:60,dri:72,def:35,phy:88},
+      {n:'도안 리쓰',         nat:'🇯🇵', team:'프라이부르크',             pos:'FW', tier:'fans',   pac:80,sho:70,pas:67,dri:76,def:39,phy:67},
+      {n:'라이언 그라벤베르흐',nat:'🇳🇱',team:'리버풀',                  pos:'MF', tier:'fans',   pac:75,sho:58,pas:77,dri:72,def:65,phy:72},
+      {n:'데클란 라이스',     nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',team:'아스날',          pos:'MF', tier:'fans',   pac:68,sho:62,pas:76,dri:68,def:82,phy:78},
+      {n:'워렌 자이르에메리', nat:'🇫🇷', team:'아스날',                  pos:'MF', tier:'fans',   pac:78,sho:62,pas:74,dri:76,def:58,phy:65},
+      {n:'페드루 네투',       nat:'🇵🇹', team:'첼시',                    pos:'FW', tier:'fans',   pac:82,sho:68,pas:65,dri:79,def:33,phy:62},
+      {n:'미하일로 무드리크', nat:'🇺🇦', team:'첼시',                    pos:'FW', tier:'fans',   pac:83,sho:67,pas:64,dri:78,def:32,phy:63},
+      {n:'마르셀 자비처',     nat:'🇦🇹', team:'첼시',                    pos:'MF', tier:'fans',   pac:70,sho:60,pas:75,dri:70,def:65,phy:70},
+      {n:'모하메드 쿠다스',   nat:'🇬🇭', team:'아스날',                  pos:'MF', tier:'fans',   pac:72,sho:60,pas:74,dri:72,def:60,phy:67},
+      {n:'밀란 슈크리니아르', nat:'🇸🇰', team:'PSG',                    pos:'DF', tier:'fans',   pac:67,sho:32,pas:63,dri:50,def:83,phy:79},
+      {n:'키에란 트리피어',   nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',team:'뉴캐슬',          pos:'DF', tier:'fans',   pac:70,sho:55,pas:74,dri:62,def:76,phy:65},
+      {n:'그라니트 자카',     nat:'🇨🇭', team:'바르셀로나',              pos:'MF', tier:'fans',   pac:63,sho:58,pas:76,dri:63,def:72,phy:72},
+      {n:'올리버 지루',       nat:'🇫🇷', team:'LA FC',                  pos:'FW', tier:'fans',   pac:60,sho:76,pas:62,dri:64,def:38,phy:78},
+      {n:'앙헬 디 마리아',    nat:'🇦🇷', team:'벤피카',                  pos:'FW', tier:'fans',   pac:80,sho:75,pas:78,dri:82,def:30,phy:60},
+      {n:'레나토 사친',       nat:'🇧🇷', team:'바이에른 뮌헨',           pos:'MF', tier:'fans',   pac:78,sho:60,pas:74,dri:75,def:55,phy:67},
+      {n:'요나스 빈트',       nat:'🇩🇪', team:'레버쿠젠',                pos:'MF', tier:'fans',   pac:72,sho:58,pas:72,dri:68,def:67,phy:68},
+      {n:'아흐마두 디알로',   nat:'🇸🇳', team:'도르트문트',              pos:'DF', tier:'fans',   pac:82,sho:30,pas:60,dri:55,def:76,phy:72},
+      // CORE
+      {n:'조던 픽퍼드',       nat:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',team:'에버튼',          pos:'GK', tier:'core',   pac:72,sho:18,pas:68,dri:24,def:82,phy:76},
+      {n:'앙드레 오나나',     nat:'🇨🇲', team:'맨체스터 유나이티드',     pos:'GK', tier:'core',   pac:71,sho:18,pas:70,dri:22,def:80,phy:75},
+      {n:'다비드 라야',       nat:'🇪🇸', team:'아스날',                  pos:'GK', tier:'core',   pac:70,sho:18,pas:72,dri:24,def:82,phy:74},
+      {n:'우나이 시몬',       nat:'🇪🇸', team:'아틀레틱 빌바오',          pos:'GK', tier:'core',   pac:70,sho:15,pas:68,dri:22,def:82,phy:75},
+      {n:'디오구 코스타',     nat:'🇵🇹', team:'포르투',                  pos:'GK', tier:'core',   pac:68,sho:15,pas:68,dri:22,def:80,phy:72},
+    ];
+
+    function getPrice(p) {
+      const total = p.pac + p.sho + p.pas + p.dri + p.def + p.phy;
+      return Math.round(total * TIERS[p.tier].mult / 1000000);
+    }
+
+    let budget = 250;
+    let squad = [];
+    let currentFilter = 'all';
+
+    function renderMarket() {
+      const list = document.getElementById('player-list');
+      const filtered = PLAYERS.filter(p => {
+        if (currentFilter === 'all') return true;
+        if (['FW','MF','DF','GK'].includes(currentFilter)) return p.pos === currentFilter;
+        return p.tier === currentFilter;
+      });
+      list.innerHTML = filtered.map((p, i) => {
+        const price = getPrice(p);
+        const owned = squad.some(s => s.n === p.n);
+        const canAfford = price <= budget;
+        return `<div class="player-card ${p.tier}">
+          <div>
+            <div class="tier-badge ${p.tier}">${TIERS[p.tier].lbl}</div>
+            <div style="font-size:11px;color:#666;margin-top:4px;">${p.pos}</div>
+          </div>
+          <div class="player-info">
+            <div class="player-name">${p.nat} ${p.n}</div>
+            <div class="player-meta">${p.team}</div>
+            <div class="player-stats">
+              <div class="stat-item">PAC <span>${p.pac}</span></div>
+              <div class="stat-item">SHO <span>${p.sho}</span></div>
+              <div class="stat-item">PAS <span>${p.pas}</span></div>
+              <div class="stat-item">DRI <span>${p.dri}</span></div>
+              <div class="stat-item">DEF <span>${p.def}</span></div>
+              <div class="stat-item">PHY <span>${p.phy}</span></div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div class="player-price">€${price}M</div>
+            ${owned
+              ? `<button class="btn-sell" onclick="sellPlayer('${p.n}')">판매</button>`
+              : `<button class="btn-sign" ${canAfford?'':'disabled'} onclick="signPlayer(${PLAYERS.indexOf(p)})">영입</button>`
+            }
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function signPlayer(idx) {
+      const p = PLAYERS[idx];
+      const price = getPrice(p);
+      if (price > budget) return;
+      if (squad.length >= 20) { alert('스쿼드가 꽉 찼어! (최대 20명)'); return; }
+      budget -= price;
+      squad.push(p);
+      updateBudget();
+      renderMarket();
+    }
+
+    function sellPlayer(name) {
+      const idx = squad.findIndex(s => s.n === name);
+      if (idx === -1) return;
+      const p = squad[idx];
+      const sellPrice = Math.floor(getPrice(p) * 0.8);
+      budget += sellPrice;
+      squad.splice(idx, 1);
+      updateBudget();
+      renderMarket();
+    }
+
+    function updateBudget() {
+      document.getElementById('budget-display').textContent = `€${budget}M`;
+    }
+
+    function filterPlayers(f) {
+      currentFilter = f;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      renderMarket();
+    }
+
+    function goTo(pageId) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(pageId).classList.add('active');
+      if (pageId === 'page-market') renderMarket();
+    }
+
+    function logout() {
+      document.getElementById('input-clubname').value = '';
+      document.getElementById('input-pin').value = '';
+      goTo('page-setup');
+    }
+
+    function togglePin() {
+      const pin = document.getElementById('input-pin');
+      pin.type = pin.type === 'password' ? 'text' : 'password';
+    }
+
+    function startClub() {
+      const clubName = document.getElementById('input-clubname').value.trim();
+      const pin = document.getElementById('input-pin').value.trim();
+
+      if (!clubName) { alert('구단 이름을 입력해!'); return; }
+      if (pin.length !== 4) { alert('PIN은 4자리 숫자야!'); return; }
+
+      // 일단 홈으로 이동 (나중에 Supabase 저장 추가)
+      document.querySelector('.club-name').textContent = clubName;
+      goTo('page-home');
+    }
+  </script>
+
+</body>
+
+</html>
